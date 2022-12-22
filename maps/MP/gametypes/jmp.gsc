@@ -156,10 +156,10 @@ Callback_StartGameType()
 	precacheHeadIcon("gfx/hud/headicon@re_objcarrier.tga");
 	precacheHeadIcon("gfx/hud/hud@health_cross.tga");
 
-    jumpmod\mapvote::init();
-    jumpmod\commands::precache();
-    jumpmod\commands::init();
-    thread jumpmod();
+	jumpmod\mapvote::init();
+	jumpmod\commands::precache();
+	jumpmod\commands::init();
+	thread jumpmod();
 }
 
 Callback_PlayerConnect()
@@ -203,7 +203,7 @@ Callback_PlayerConnect()
 	self setClientCvar("scr_showweapontab", "0");
 	self openMenu(game["menu_team"]);
 
-    self setClientCvar("cg_objectiveText", "Complete the jump map from start to end before the time runs out.\nDouble tap ^1MELEE ^7key to save position.\nDouble tap ^1USE ^7key to load saved positions.");
+	self setClientCvar("cg_objectiveText", "Complete the jump map from start to end before the time runs out.\nDouble tap ^1MELEE ^7key to save position.\nDouble tap ^1USE ^7key to load saved positions.");
 
 	teams[0] = "allies";
 	teams[1] = "axis";
@@ -332,7 +332,7 @@ Callback_PlayerDamage(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sW
 
 Callback_PlayerKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc)
 {
-    level endon("end_map");
+	level endon("end_map");
 	self endon("spawned");
 
 	if(self.sessionteam == "spectator")
@@ -691,14 +691,14 @@ spawnSpectator(origin, angles)
 	if(self.pers["team"] == "spectator")
 		self.statusicon = "gfx/hud/hud@objective_bel.tga";
 
-    spawnpointname = "mp_deathmatch_intermission";
-    spawnpoints = getEntArray(spawnpointname, "classname");
-    spawnpoint = maps\mp\gametypes\_spawnlogic::getSpawnpoint_Random(spawnpoints);
+	spawnpointname = "mp_deathmatch_intermission";
+	spawnpoints = getEntArray(spawnpointname, "classname");
+	spawnpoint = maps\mp\gametypes\_spawnlogic::getSpawnpoint_Random(spawnpoints);
 
-    if(isDefined(spawnpoint))
-        self spawn(spawnpoint.origin, spawnpoint.angles);
-    else
-        maps\mp\_utility::error("NO " + spawnpointname + " SPAWNPOINTS IN MAP");
+	if(isDefined(spawnpoint))
+		self spawn(spawnpoint.origin, spawnpoint.angles);
+	else
+		maps\mp\_utility::error("NO " + spawnpointname + " SPAWNPOINTS IN MAP");
 }
 
 spawnIntermission()
