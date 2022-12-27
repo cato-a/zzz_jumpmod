@@ -187,6 +187,9 @@ Callback_PlayerConnect()
 	self.save_array_max_length = 22;
 	self.load_index = 0;
 
+	self.pers["mm_chattimer"] = getTime();
+	self.pers["mm_chatmessages"] = 1;
+
 	thread jumpmod\commands::_checkLoggedIn();
 
 	if(game["state"] == "intermission") {
@@ -673,7 +676,7 @@ spawnPlayer()
 
 	if(!isDefined(self.firstspawn)) {
 		self.firstspawn = true;
-		self setClientCvar("r_swapinterval", 0);
+		self setClientCvar("r_swapInterval", 0); // Sync Every Frame = "No"
 		thread jumpmod\miscmod::welcome_display();
 	}
 }
@@ -1054,7 +1057,7 @@ mapsetup()
 			ladderjumps[0]["angles"] = (0, 90, 0);
 		break;
 
-		case "jm_lockover":
+		case "jm_lockover": // need nadespot - runs out of nades
 			level.timelimit = 20;
 		break;
 

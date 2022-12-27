@@ -42,6 +42,13 @@ init()
 	if(getCvar("scr_mm_cmd_nameprefix") != "")
 		level.nameprefix = getCvar("scr_mm_cmd_nameprefix");
 
+	level.messageburst = 3; // 3 messages - allow 3 messages in X seconds
+	if(getCvar("scr_mmj_messagepenburst") != "")
+		level.messageburst = getCvarInt("scr_mmj_messagepenburst");
+	level.messagepentime = 2; // 2 seconds - allow X messages in 2 seconds
+	if(getCvar("scr_mmj_messagepentime") != "")
+		level.messagepentime = getCvarInt("scr_mmj_messagepentime");
+
 	level.command = ::command;
 	level.commands = [];
 
@@ -83,65 +90,14 @@ init()
 	/*34*/commands(level.prefix + "vote"		, ::cmd_vote		, "Vote to change/end the map, or to extend the map timer. [" + level.prefix + "vote <endmap|extend|changemap|yes|no> (<time>|<mapname>)]");
 	/*35*/commands(level.prefix + "gps"			, ::cmd_gps			, "Toggle current coordinates. [" + level.prefix + "gps]");
 
+	// ADD !move command - !move <num> <up|down|left|right|forward|backwards> <unit> -- abbreviate u d l r f b
 
- 	//commands(level.prefix + "fov"	, 	::cmd_fov		, "Set field of view. [" + level.prefix + "fov <value>]");
-	//commands(level.prefix + "mute",		::cmd_mute		, "Mute player. [" + level.prefix + "mute <num|list>]");
-	//commands(level.prefix + "unmute",	::cmd_unmute		, "Unmute player. [" + level.prefix + "unmute <num>]");
-
-
-	// Cheese commands
-/* 	commands(level.prefix + "drop",		::cmd_drop		, "Drop a player. [" + level.prefix + "drop <num> <height>]");
-	commands(level.prefix + "spank",	::cmd_spank		, "Spank a player. [" + level.prefix + "spank <num> <time>]");
-	commands(level.prefix + "slap",		::cmd_slap		, "Slap a player. [" + level.prefix + "slap <num> <damage>]");
-	commands(level.prefix + "blind",	::cmd_blind		, "Blind a player. [" + level.prefix + "blind <num> <time>]");
-	commands(level.prefix + "runover",	::cmd_runover		, "Run over a player. [" + level.prefix + "runover <num>]");
-	commands(level.prefix + "squash",	::cmd_squash		, "Squash a player. [" + level.prefix + "squash <num>]");
-	commands(level.prefix + "rape",		::cmd_rape		, "Rape a player. [" + level.prefix + "rape <num>]");
-	commands(level.prefix + "toilet",	::cmd_toilet		, "Turn player into a toilet. [" + level.prefix + "toilet <num>]");
- */	// PowerServer
-/* 	commands(level.prefix + "explode",	::cmd_explode		, "Explode a player. [" + level.prefix + "explode <num>]");
-	commands(level.prefix + "force",	::cmd_force		, "Force players to team. [" + level.prefix + "<axis|allies|spectator> <num|all> (...)]");
-	commands(level.prefix + "mortar",	::cmd_mortar		, "Mortar a player. [" + level.prefix + "mortar <num>]");
-	commands(level.prefix + "matrix",	::cmd_matrix		, "Matrix. [" + level.prefix + "matrix]");
-	commands(level.prefix + "burn",		::cmd_burn		, "Burn a player. [" + level.prefix + "burn <num>]");
-	commands(level.prefix + "cow",		::cmd_cow		, "BBQ a player. [" + level.prefix + "cow <num>]");
-	commands(level.prefix + "disarm",	::cmd_disarm		, "Disarm a player. [" + level.prefix + "disarm <num>]");
- */
-	// momo74 commands
-/* 	commands(level.prefix + "rs",		::cmd_rs		, "Reset your scores in the scoreboard. [" + level.prefix + "rs ]");
-
- */	// Client CVAR commands
-/* 
- */	// More commands
-/* 
-	commands(level.prefix + "freeze",		::cmd_freeze	, "Freeze player(s). [" + level.prefix + "freeze <on|off> <num|all>]");
- */
 	level.voteinprogress = getTime(); // !vote command
 	thread _loadBans(); // reload bans from dat file every round
-	//thread _loadFOV();
-	//thread _loadBadWords();
 }
 
 precache()
 {
-/* 	precacheShellshock("default");
-	precacheShellshock("groggy");
-	precacheModel("xmodel/vehicle_tank_tiger");
-	precacheModel("xmodel/vehicle_russian_barge");
-	precacheModel("xmodel/playerbody_russian_conscript");
-	precacheModel("xmodel/toilet");
-	precacheModel("xmodel/cow_dead");
-	precacheModel("xmodel/cow_standing");
-
-	level._effect["fireheavysmoke"]	= loadfx("fx/fire/fireheavysmoke.efx");
-	level._effect["flameout"] = loadfx("fx/tagged/flameout.efx");
-	level._effect["bombexplosion"] = loadfx("fx/explosions/pathfinder_explosion.efx");
-	level._effect["mortar_explosion"][0] = loadfx("fx/impacts/newimps/minefield.efx");
-	level._effect["mortar_explosion"][3] = loadfx("fx/impacts/newimps/minefield.efx");
-	level._effect["mortar_explosion"][2] = loadfx("fx/impacts/dirthit_mortar.efx");
-	level._effect["mortar_explosion"][1] = loadfx("fx/impacts/newimps/blast_gen3.efx");
-	level._effect["mortar_explosion"][4] = loadfx("fx/impacts/newimps/dirthit_mortar2daymarked.efx"); */
-
 	precacheString(&"Yes");
 	precacheString(&"No");
 	precacheString(&"Use command");
@@ -174,46 +130,35 @@ command(str)
 		return;
 	}
 
-/* 	if(level.maxmessages > 0 && !isDefined(self.pers["mm_group"])) {
-		penaltytime = level.penaltytime;
-		if(self.pers["mm_chatmessages"] > level.maxmessages)
-			penaltytime += self.pers["mm_chatmessages"] - level.maxmessages;
-		penaltytime *= 1000;
+	if(!isDefined(self.pers["mm_group"])) {
+		penaltytime = level.messagepentime;
 
+		if(self.pers["mm_chatmessages"] > level.messageburst) // mm_chatmessages set in PlayerConnect()
+			penaltytime += (self.pers["mm_chatmessages"] - level.messageburst);
+
+		penaltytime *= 1000;
 		if(getTime() - self.pers["mm_chattimer"] >= penaltytime) {
-			self.pers["mm_chattimer"] = getTime();
+			self.pers["mm_chattimer"] = getTime(); // mm_chattimer set in PlayerConnect()
 			self.pers["mm_chatmessages"] = 1;
-		}	else {
+		} else {
 			self.pers["mm_chatmessages"]++;
-			if(self.pers["mm_chatmessages"] > level.maxmessages)
-				message_player("You are currently muted for " + (float)(penaltytime / 1000) + " second(s).");
+
+			if(self.pers["mm_chatmessages"] > level.messageburst) {
+				if(self.pers["mm_chatmessages"] > 21) // 20 seconds max wait
+					self.pers["mm_chatmessages"] = 21; // 20 seconds max wait
+				
+				unit = "seconds";
+				if(penaltytime == 1000) // 1 second
+					unit = "second";
+				message_player("You are currently muted for " + (penaltytime / 1000) + " " + unit + ".");
+				creturn(); return;
+			}
 		}
 	}
 
-	if(isDefined(self.pers["mm_mute"]) || (level.maxmessages > 0 && self.pers["mm_chatmessages"] > level.maxmessages)) {
-		creturn(); // return in codextended.so
-		return;
-	} */
-
 	if(str.size == 1) return; // just 1 letter, ignore
-	if(str[0] != level.prefix) { // string index 0 out of range (fixed above)
-/* 		if(isDefined(level.badwords)) {
-			//print message to console with cleaned string say or sayt
-			//requires modification to codextended, or sendservercommand with say/sayt
-			//str = badwords_clean(str, badwords);
-
-			if(badwords_mute(str)) {
-				badmessage = "^5INFO: ^7You were silenced due to inappropriate language.";
-				if(isDefined(self.badword))
-					badmessage += " The offensive word in question was: " + self.badword + ".";
-				message_player(badmessage);
-
-				creturn();
-			}
-		} */
-
+	if(str[0] != level.prefix) // string index 0 out of range (fixed above)
 		return;
-	}
 
 	creturn(); // return in codextended.so
 
@@ -232,26 +177,6 @@ command(str)
 		}
 	}
 }
-
-/* badwords_mute(str) // str - mute
-{
-	if(!isDefined(str) || !isDefined(level.badwords))
-		return false;
-
-	str = jumpmod\functions::strTok(str, " ");
-	for(i = 0; i < str.size; i++) {
-		for(b = 0; b < level.badwords.size; b++) {
-			// it's expected all badwords are lower case for better performance
-			str[i] = jumpmod\functions::monotone(str[i]); // TODO: add removal of anything not letters
-			if(jumpmod\functions::pmatch(tolower(str[i]), level.badwords[b])) {
-				self.badword = level.badwords[b];
-				return true;
-			}
-		}
-	}
-
-	return false;
-} */
 
 permissions(perms, id, def) // "*:<id>:<id1>-<id2>:!<id>" :P
 {
@@ -431,8 +356,6 @@ _delete()
 {
 	num = self getEntityNumber();
 	_removeLoggedIn(num);
-	//_removeMuted(num);
-	//_removeFOV(num);
 }
 
 _loadBans()
@@ -2227,10 +2150,15 @@ cmd_vote_huds_timer() // not a command :P
 				}
 			}
 		}
+
 		if(isDefined(level.voteYesValue))
 			level.voteYesValue setValue(y);
 		if(isDefined(level.voteNoValue))
 			level.voteNoValue setValue(n);
+
+		if(y == players.size || n == players.size || (y + n) == players.size) // all players has voted
+			break;
+
 		wait 1;
 	}
 
