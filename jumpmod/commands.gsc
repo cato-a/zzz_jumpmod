@@ -1997,19 +1997,20 @@ cmd_vote(args)
 
 	timepassed = (getTime() - level.starttime) / 1000;
 	timepassed = timepassed / 60.0;
-	if(timepassed >= level.timelimit - (1 / 4)) { // 15 sec
+	if(timepassed > (level.timelimit - 0.5)) { // 30 seconds
 		message_player("^1ERROR: ^7Vote must be started with enough time left to conduct the vote.");
 		return;
 	}
 
-	timepassed = (getTime() - level.voteinprogress) / 1000;
-	timepassed = timepassed / 60.0;
-	votecooldown = 2;
+	timepassed = (getTime() - level.voteinprogress) / 1000.0;
+	votecooldown = 45; // 45 seconds
 	if(timepassed < votecooldown) {
-		unit = "minutes";
-		timeremaining = (int)((votecooldown - timepassed) + 1);
-		if(timeremaining == 1)
-			unit = "minute";
+		unit = "seconds";
+		timeremaining = votecooldown - timepassed;
+		if(timeremaining <= 1) {
+			timeremaining = 1;
+			unit = "second";
+		}
 		message_player("^5INFO: ^7Voting is available in less than " + timeremaining + " " + unit + ".");
 		return;
 	}
@@ -2069,6 +2070,11 @@ cmd_vote(args)
 
 			if(!jumpmod\functions::in_array(maps, map)) {
 				message_player("^1ERROR: ^7Not a valid map.");
+				return;
+			}
+
+			if(map == level.mapname) { // Prevent vote current map
+				message_player("^1ERROR: ^7You can't vote for the current map.");
 				return;
 			}
 
