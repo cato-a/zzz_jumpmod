@@ -1838,14 +1838,21 @@ cmd_teleport(args)
 			if(trace["fraction"] == 1 && !positionWouldTelefrag(trace["position"]) && jumpmod\functions::_canspawnat(trace["position"])) {
 				player1 setPlayerAngles(self.angles);
 				player1 setOrigin(trace["position"]);
-				message_player("^5INFO: ^7You were teleported to player: " + jumpmod\functions::namefix(player2.name) + "^7.", player1);
+				if(player1 != self) {
+					if(player2 != self)
+						message_player("^5INFO: ^7You teleported " + jumpmod\functions::namefix(player1.name) + " to player " + jumpmod\functions::namefix(player2.name) + "^7.");
+					else
+						message_player("^5INFO: ^7You teleported " + jumpmod\functions::namefix(player1.name) + " to yourself.");
+					message_player("^5INFO: ^7You were teleported to player " + jumpmod\functions::namefix(player2.name) + "^7.", player1);
+				} else
+					message_player("^5INFO: ^7You teleported yourself to player " + jumpmod\functions::namefix(player2.name) + "^7.");
 				return;
 			}
 
 			wait 0.05;
 		}
 
-		message_player("^1ERROR: ^7Unable to teleport to player: " + jumpmod\functions::namefix(player2.name) + "^7.");
+		message_player("^1ERROR: ^7Unable to teleport to player " + jumpmod\functions::namefix(player2.name) + "^7.");
 		return;
 	}
 
