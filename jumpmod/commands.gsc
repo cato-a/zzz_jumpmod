@@ -32,7 +32,7 @@ init()
 	level.reportfile = "miscmod_reports.dat";
 
 	if(!isDefined(level.perms["default"]))
-		level.perms["default"] = jumpmod\functions::strTok("0-3:5-6:18:33-35", ":"); // pff xD
+		level.perms["default"] = jumpmod\functions::strTok("0-3:5-6:18:33-35:37", ":"); // pff xD
 
 	level.prefix = "!";
 	if(getCvar("scr_mm_cmd_prefix") != "")
@@ -90,6 +90,7 @@ init()
 	/*34*/commands(level.prefix + "vote"		, ::cmd_vote		, "Vote to change/end the map, or to extend the map timer. [" + level.prefix + "vote <endmap|extend|changemap|yes|no> (<time>|<mapname>)]");
 	/*35*/commands(level.prefix + "gps"			, ::cmd_gps			, "Toggle current coordinates. [" + level.prefix + "gps]");
 	/*36*/commands(level.prefix + "move"		, ::cmd_move		, "Move a player up, down, left, right, forward or backwards by specified units. [" + level.prefix + "move <num> <up|down|left|right|forward|backwards> <units>]");
+	/*37*/commands(level.prefix + "retry"		, ::cmd_retry		, "Respawn player and clean score, saves, etc.. [" + level.prefix + "retry");
 
 	level.voteinprogress = getTime(); // !vote command
 	thread _loadBans(); // reload bans from dat file every round
@@ -2548,4 +2549,42 @@ cmd_move(args) // From Heupfer jumpmod
 		message_player("^5INFO: ^7You moved yourself " + units + " units " + direction + ".");
 
 	player setOrigin(player.origin + dirv);
+}
+
+cmd_retry(args)
+{
+	spawnpoints = getEntArray("mp_deathmatch_spawn", "classname");
+	spawnpoint = maps\mp\gametypes\_spawnlogic::getSpawnpoint_DM(spawnpoints);
+	if(isDefined(spawnpoint)) {
+		if(positionWouldTelefrag(spawnpoint.origin)) {
+			for(i = 0; i < 360; i += 36) {
+				angle = (0, i, 0);
+
+				trace = bulletTrace(spawnpoint.origin, spawnpoint.origin + maps\mp\_utility::vectorscale(anglesToForward(angle), 48), true, self);
+				if(trace["fraction"] == 1 && !positionWouldTelefrag(trace["position"]) && jumpmod\functions::_canspawnat(trace["position"])) {
+					cmd_retry_clear(trace["position"], self.angles);
+					break;
+				}
+
+				wait 0.05;
+			}
+			message_player("^1ERROR: ^7Bad spawnpoint location. Run !retry to try again.");
+		} else
+			cmd_retry_clear(spawnpoint.origin, spawnpoint.angles);
+	}
+}
+
+cmd_retry_clear(origin, angles) // not a cmd
+{
+	self setPlayerAngles(angles);
+	self setOrigin(origin);
+	self.score = 0;
+	self.deaths = 0;
+
+	if(isDefined(self.save_array))
+		self.save_array = [];
+
+	self takeAllWeapons();
+	wait 0;
+	maps\MP\gametypes\jmp::jmpWeapons(); // TODO: improve
 }
