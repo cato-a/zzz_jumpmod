@@ -90,7 +90,7 @@ init()
 	/*34*/commands(level.prefix + "vote"		, ::cmd_vote		, "Vote to change/end the map, or to extend the map timer. [" + level.prefix + "vote <endmap|extend|changemap|yes|no> (<time>|<mapname>)]");
 	/*35*/commands(level.prefix + "gps"			, ::cmd_gps			, "Toggle current coordinates. [" + level.prefix + "gps]");
 	/*36*/commands(level.prefix + "move"		, ::cmd_move		, "Move a player up, down, left, right, forward or backwards by specified units. [" + level.prefix + "move <num> <up|down|left|right|forward|backwards> <units>]");
-	/*37*/commands(level.prefix + "retry"		, ::cmd_retry		, "Respawn player and clean score, saves, etc.. [" + level.prefix + "retry");
+	/*37*/commands(level.prefix + "retry"		, ::cmd_retry		, "Respawn player and clear the score, saves, etc.. [" + level.prefix + "retry]");
 
 	level.voteinprogress = getTime(); // !vote command
 	thread _loadBans(); // reload bans from dat file every round
