@@ -89,8 +89,7 @@ init()
 	/*33*/commands(level.prefix + "maplist"		, ::cmd_maplist		, "Show a list of available jump maps. [" + level.prefix + "maplist]");
 	/*34*/commands(level.prefix + "vote"		, ::cmd_vote		, "Vote to change/end the map, or to extend the map timer. [" + level.prefix + "vote <endmap|extend|changemap|yes|no> (<time>|<mapname>)]");
 	/*35*/commands(level.prefix + "gps"			, ::cmd_gps			, "Toggle current coordinates. [" + level.prefix + "gps]");
-
-	// ADD !move command - !move <num> <up|down|left|right|forward|backwards> <unit> -- abbreviate u d l r f b
+	/*36*/commands(level.prefix + "move"		, ::cmd_move		, "Move a player up, down, left, right, forward or backwards by specified units. [" + level.prefix + "move <num> <up|down|left|right|forward|backwards> <units>]");
 
 	level.voteinprogress = getTime(); // !vote command
 	thread _loadBans(); // reload bans from dat file every round
@@ -2448,4 +2447,98 @@ cmd_gps_cleanup() // not a command :P
 		self.gpshudangle destroy();
 	if(isDefined(self.gpshudangleval))
 		self.gpshudangleval destroy();
+}
+
+cmd_move(args) // From Heupfer jumpmod
+{ // !move <num> <up|down|left|right|forward|backwards> <units> -- abbreviate u d l r f b
+	if(args.size != 4) {
+		message_player("^1ERROR: ^7Invalid number of arguments, should be 3: !move <num> <up|down|left|right|forward|backwards> <units>.");
+		return;
+	}
+
+	units = args[3];
+	if(!jumpmod\functions::validate_number(units)) {
+		message_player("^1ERROR: ^7Invalid argument <units>. Units must be a number.");
+		return;
+	}
+	units = (float)units;
+
+	args1 = args[1]; // num | string
+	if(jumpmod\functions::validate_number(args1)) {
+		player = jumpmod\functions::playerByNum(args1);
+		if(!isDefined(player)) {
+			message_player("^1ERROR: ^7No such player (" +  args1 + ").");
+			return;
+		}
+	} else {
+		player = playerByName(args1);
+		if(!isDefined(player)) return;
+	}
+
+	direction = args[2];
+	if(direction.size == 1) {
+		directions["u"] = "up";
+		directions["d"] = "down";
+		directions["l"] = "left";
+		directions["r"] = "right";
+		directions["f"] = "forward";
+		directions["b"] = "backward";
+
+		if(isDefined(directions[direction]))
+			direction = directions[direction];
+	}
+		
+	switch(direction) {
+		case "up":
+			dirv = (0, 0, units);
+		break;
+
+		case "down":
+			dirv = (0, 0, units * -1);
+		break;
+
+		case "left":
+			dirv = anglesToRight(player.angles);
+			dirv = maps\mp\_utility::vectorScale(dirv, units * - 1);
+		break;
+
+		case "right":
+			dirv = anglesToRight(player.angles);
+			dirv = maps\mp\_utility::vectorScale(dirv, units);
+		break;
+
+		case "forward":
+			dirv = anglesToForward(player.angles);
+			dirv = maps\mp\_utility::vectorScale(dirv, units);
+		break;
+
+		case "backward":
+			dirv = anglesToForward(player.angles);
+			dirv = maps\mp\_utility::vectorScale(dirv, units * -1);
+		break;
+
+		default:
+			message_player("^1ERROR: ^7Direction must be <up|down|left|right|forward|backwards> or in abbreviated form <u|d|l|r|f|b>.");
+		return;
+	}
+
+	// dirv = player.origin + dirv;
+	// if(!positionWouldTelefrag(dirv) && jumpmod\functions::_canspawnat(dirv)) {
+	// 	if(player != self) {
+	// 		message_player("^5INFO: ^7Moving player " + jumpmod\functions::namefix(player.name) + "^7 " + units + " units " + direction + ".");
+	// 		message_player("^5INFO: You were moved by " + jumpmod\functions::namefix(self.name) + "^7 " + units + " units " + direction + ".");
+	// 	} else
+	// 		message_player("^5INFO: You moved yourself " + units + " units " + direction + ".");
+
+	// 	player setOrigin(dirv);
+	// } else
+	// 	message_player("^1ERROR: ^7Unable to move to the specified direction.");
+
+	if(player != self) {
+		message_player("^5INFO: ^7Moving player " + jumpmod\functions::namefix(player.name) + "^7 " + units + " units " + direction + ".");
+		message_player("^5INFO: ^7You were moved by " + jumpmod\functions::namefix(self.name) + "^7 " + units + " units " + direction + ".", player);
+	} else
+		message_player("^5INFO: ^7You moved yourself " + units + " units " + direction + ".");
+
+	player setOrigin(player.origin + dirv);
 }
