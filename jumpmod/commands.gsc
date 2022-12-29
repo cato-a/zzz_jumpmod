@@ -1072,7 +1072,7 @@ cmd_kill(args)
 	if(isAlive(player)) {
 		player suicide();
 		message_player("^5INFO: ^7You killed " + jumpmod\functions::namefix(player.name) + "^7.");
-		message_player("^5INFO: You were killed by " + jumpmod\functions::namefix(self.name) + "^7.", player);
+		message_player("^5INFO: ^7You were killed by " + jumpmod\functions::namefix(self.name) + "^7.", player);
 	} else
 		message_player("^1ERROR: ^7Player must be alive.");
 }
@@ -1601,7 +1601,7 @@ cmd_optimize(args)
 	player setClientCvar("snaps", 40);
 
 	message_player("^5INFO: ^7Player " + jumpmod\functions::namefix(player.name) + " ^7connection settings optimized.");
-	message_player("^5INFO: " + jumpmod\functions::namefix(self.name) + " ^7modifed your 'rate', 'snaps' and 'cl_maxpackets' to optimal values.", player);
+	message_player("^5INFO: ^7" + jumpmod\functions::namefix(self.name) + " ^7modifed your 'rate', 'snaps' and 'cl_maxpackets' to optimal values.", player);
 }
 
 cmd_pcvar(args)
@@ -1694,7 +1694,7 @@ cmd_pcvar(args)
 	player setClientCvar(cvar, cval);
 
 	message_player("^5INFO: ^7" + cvar + " set with value " + cval + " on player " + jumpmod\functions::namefix(player.name) + "^7.");
-	message_player("^5INFO: " + jumpmod\functions::namefix(self.name) + " ^7changed your client cvar " + cvar + " to " + cval + ".", player);
+	message_player("^5INFO: ^7" + jumpmod\functions::namefix(self.name) + " ^7changed your client cvar " + cvar + " to " + cval + ".", player);
 }
 
 cmd_scvar(args)
@@ -2542,9 +2542,9 @@ cmd_move(args) // From Heupfer jumpmod
 		// if(!positionWouldTelefrag(dirv) && jumpmod\functions::_canspawnat(dirv)) {
 		// 	if(player != self) {
 		// 		message_player("^5INFO: ^7Moving player " + jumpmod\functions::namefix(player.name) + "^7 " + units + " units " + direction + ".");
-		// 		message_player("^5INFO: You were moved by " + jumpmod\functions::namefix(self.name) + "^7 " + units + " units " + direction + ".");
+		// 		message_player("^5INFO: ^7You were moved by " + jumpmod\functions::namefix(self.name) + "^7 " + units + " units " + direction + ".");
 		// 	} else
-		// 		message_player("^5INFO: You moved yourself " + units + " units " + direction + ".");
+		// 		message_player("^5INFO: ^7You moved yourself " + units + " units " + direction + ".");
 
 		// 	player setOrigin(dirv);
 		// } else
