@@ -2583,15 +2583,20 @@ cmd_retry(args)
 
 cmd_retry_clear(origin, angles) // not a cmd
 {
-	self setPlayerAngles(angles);
-	self setOrigin(origin);
+	message_player("^5INFO: ^7Score, deaths and saves cleared.");
+
 	self.score = 0;
 	self.deaths = 0;
 
 	if(isDefined(self.save_array))
 		self.save_array = [];
 
-	self takeAllWeapons();
-	wait 0;
-	maps\MP\gametypes\jmp::jmpWeapons(); // TODO: improve
+	if(isAlive(self) && self.sessionstate == "playing") {
+		self setPlayerAngles(angles);
+		self setOrigin(origin);
+
+		self takeAllWeapons();
+		wait 0;
+		self maps\MP\gametypes\jmp::jmpWeapons(); // TODO: improve
+	}
 }
