@@ -2490,72 +2490,78 @@ cmd_move(args) // From Heupfer jumpmod
 		if(!isDefined(player)) return;
 	}
 
-	direction = args[2];
-	if(direction.size == 1) {
-		directions["u"] = "up";
-		directions["d"] = "down";
-		directions["l"] = "left";
-		directions["r"] = "right";
-		directions["f"] = "forward";
-		directions["b"] = "backward";
+	if(isAlive(player)) {
+		direction = args[2];
+		if(direction.size == 1) {
+			directions["u"] = "up";
+			directions["d"] = "down";
+			directions["l"] = "left";
+			directions["r"] = "right";
+			directions["f"] = "forward";
+			directions["b"] = "backward";
 
-		if(isDefined(directions[direction]))
-			direction = directions[direction];
-	}
-		
-	switch(direction) {
-		case "up":
-			dirv = (0, 0, units);
-		break;
+			if(isDefined(directions[direction]))
+				direction = directions[direction];
+		}
+			
+		switch(direction) {
+			case "up":
+				dirv = (0, 0, units);
+			break;
 
-		case "down":
-			dirv = (0, 0, units * -1);
-		break;
+			case "down":
+				dirv = (0, 0, units * -1);
+			break;
 
-		case "left":
-			dirv = anglesToRight(player.angles);
-			dirv = maps\mp\_utility::vectorScale(dirv, units * - 1);
-		break;
+			case "left":
+				dirv = anglesToRight(player.angles);
+				dirv = maps\mp\_utility::vectorScale(dirv, units * - 1);
+			break;
 
-		case "right":
-			dirv = anglesToRight(player.angles);
-			dirv = maps\mp\_utility::vectorScale(dirv, units);
-		break;
+			case "right":
+				dirv = anglesToRight(player.angles);
+				dirv = maps\mp\_utility::vectorScale(dirv, units);
+			break;
 
-		case "forward":
-			dirv = anglesToForward(player.angles);
-			dirv = maps\mp\_utility::vectorScale(dirv, units);
-		break;
+			case "forward":
+				dirv = anglesToForward(player.angles);
+				dirv = maps\mp\_utility::vectorScale(dirv, units);
+			break;
 
-		case "backward":
-			dirv = anglesToForward(player.angles);
-			dirv = maps\mp\_utility::vectorScale(dirv, units * -1);
-		break;
+			case "backward":
+				dirv = anglesToForward(player.angles);
+				dirv = maps\mp\_utility::vectorScale(dirv, units * -1);
+			break;
 
-		default:
-			message_player("^1ERROR: ^7Direction must be <up|down|left|right|forward|backward> or in abbreviated form <u|d|l|r|f|b>.");
-		return;
-	}
+			default:
+				message_player("^1ERROR: ^7Direction must be <up|down|left|right|forward|backward> or in abbreviated form <u|d|l|r|f|b>.");
+			return;
+		}
 
-	// dirv = player.origin + dirv;
-	// if(!positionWouldTelefrag(dirv) && jumpmod\functions::_canspawnat(dirv)) {
-	// 	if(player != self) {
-	// 		message_player("^5INFO: ^7Moving player " + jumpmod\functions::namefix(player.name) + "^7 " + units + " units " + direction + ".");
-	// 		message_player("^5INFO: You were moved by " + jumpmod\functions::namefix(self.name) + "^7 " + units + " units " + direction + ".");
-	// 	} else
-	// 		message_player("^5INFO: You moved yourself " + units + " units " + direction + ".");
+		// dirv = player.origin + dirv;
+		// if(!positionWouldTelefrag(dirv) && jumpmod\functions::_canspawnat(dirv)) {
+		// 	if(player != self) {
+		// 		message_player("^5INFO: ^7Moving player " + jumpmod\functions::namefix(player.name) + "^7 " + units + " units " + direction + ".");
+		// 		message_player("^5INFO: You were moved by " + jumpmod\functions::namefix(self.name) + "^7 " + units + " units " + direction + ".");
+		// 	} else
+		// 		message_player("^5INFO: You moved yourself " + units + " units " + direction + ".");
 
-	// 	player setOrigin(dirv);
-	// } else
-	// 	message_player("^1ERROR: ^7Unable to move to the specified direction.");
+		// 	player setOrigin(dirv);
+		// } else
+		// 	message_player("^1ERROR: ^7Unable to move to the specified direction.");
 
-	if(player != self) {
-		message_player("^5INFO: ^7Moving player " + jumpmod\functions::namefix(player.name) + "^7 " + units + " units " + direction + ".");
-		message_player("^5INFO: ^7You were moved by " + jumpmod\functions::namefix(self.name) + "^7 " + units + " units " + direction + ".", player);
+		if(direction == "left" || direction == "right")
+			direction = "to the " + direction;
+
+		if(player != self) {
+			message_player("^5INFO: ^7Moving player " + jumpmod\functions::namefix(player.name) + "^7 " + units + " units " + direction + ".");
+			message_player("^5INFO: ^7You were moved by " + jumpmod\functions::namefix(self.name) + "^7 " + units + " units " + direction + ".", player);
+		} else
+			message_player("^5INFO: ^7You moved yourself " + units + " units " + direction + ".");
+
+		player setOrigin(player.origin + dirv);
 	} else
-		message_player("^5INFO: ^7You moved yourself " + units + " units " + direction + ".");
-
-	player setOrigin(player.origin + dirv);
+		message_player("^1ERROR: ^7Player must be alive.");
 }
 
 cmd_retry(args)
