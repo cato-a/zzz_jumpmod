@@ -89,7 +89,7 @@ init()
 	/*33*/commands(level.prefix + "maplist"		, ::cmd_maplist		, "Show a list of available jump maps. [" + level.prefix + "maplist]");
 	/*34*/commands(level.prefix + "vote"		, ::cmd_vote		, "Vote to change/end the map, or to extend the map timer. [" + level.prefix + "vote <endmap|extend|changemap|yes|no> (<time>|<mapname>)]");
 	/*35*/commands(level.prefix + "gps"			, ::cmd_gps			, "Toggle current coordinates. [" + level.prefix + "gps]");
-	/*36*/commands(level.prefix + "move"		, ::cmd_move		, "Move a player up, down, left, right, forward or backwards by specified units. [" + level.prefix + "move <num> <up|down|left|right|forward|backwards> <units>]");
+	/*36*/commands(level.prefix + "move"		, ::cmd_move		, "Move a player up, down, left, right, forward or backward by specified units. [" + level.prefix + "move <num> <up|down|left|right|forward|backward> <units>]");
 	/*37*/commands(level.prefix + "retry"		, ::cmd_retry		, "Respawn player and clear the score, saves, etc.. [" + level.prefix + "retry]");
 
 	level.voteinprogress = getTime(); // !vote command
@@ -2169,7 +2169,8 @@ cmd_vote_huds_timer() // not a command :P
 		if(isDefined(level.voteNoValue))
 			level.voteNoValue setValue(n);
 
-		if(y == players.size || n == players.size || (y + n) == players.size) // all players has voted
+		// if((y + n) == players.size) // all players has voted
+		if(y == players.size || n == players.size) // unanimous players has voted
 			break;
 
 		wait 1;
@@ -2464,9 +2465,9 @@ cmd_gps_cleanup() // not a command :P
 }
 
 cmd_move(args) // From Heupfer jumpmod
-{ // !move <num> <up|down|left|right|forward|backwards> <units> -- abbreviate u d l r f b
+{ // !move <num> <up|down|left|right|forward|backward> <units> -- abbreviate u d l r f b
 	if(args.size != 4) {
-		message_player("^1ERROR: ^7Invalid number of arguments, should be 3: !move <num> <up|down|left|right|forward|backwards> <units>.");
+		message_player("^1ERROR: ^7Invalid number of arguments, should be 3: !move <num> <up|down|left|right|forward|backward> <units>.");
 		return;
 	}
 
@@ -2532,7 +2533,7 @@ cmd_move(args) // From Heupfer jumpmod
 		break;
 
 		default:
-			message_player("^1ERROR: ^7Direction must be <up|down|left|right|forward|backwards> or in abbreviated form <u|d|l|r|f|b>.");
+			message_player("^1ERROR: ^7Direction must be <up|down|left|right|forward|backward> or in abbreviated form <u|d|l|r|f|b>.");
 		return;
 	}
 
@@ -2574,7 +2575,7 @@ cmd_retry(args)
 
 				wait 0.05;
 			}
-			message_player("^1ERROR: ^7Bad spawnpoint location. Run !retry to try again.");
+			message_player("^1ERROR: ^7Bad spawnpoint location. Try the " + args[0] + " command again.");
 		} else
 			cmd_retry_clear(spawnpoint.origin, spawnpoint.angles);
 	}
