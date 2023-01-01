@@ -53,44 +53,44 @@ init()
 	level.commands = [];
 
 	// MiscMod commands
- 	/*00*/commands(level.prefix + "login"		, ::cmd_login		, "Login to access commands. [" + level.prefix + "login <user> <pass>]");
-	/*01*/commands(level.prefix + "help"		, ::cmd_help		, "Display this help. [" + level.prefix + "help]");
-	/*02*/commands(level.prefix + "version"		, ::cmd_version		, "Display version information. [" + level.prefix + "version]");
-	/*03*/commands(level.prefix + "name"		, ::cmd_name		, "Change name. [" + level.prefix + "name <new name>]");
-	/*04*/commands(level.prefix + "logout"		, ::cmd_logout		, "Logout. [" + level.prefix + "logout]");
-	/*05*/commands(level.prefix + "pm"			, ::cmd_pm			, "Private message a player. [" + level.prefix + "pm <player> <message>]");
-	/*06*/commands(level.prefix + "re"			, ::cmd_re			, "Respond to private message. [" + level.prefix + "re <message>]");
-	/*07*/commands(level.prefix + "timelimit"	, ::cmd_timelimit	, "Change the timelimit of the map. [" + level.prefix + "timelimit <time>]");
-	/*08*/commands(level.prefix + "endmap"		, ::cmd_endmap		, "Force the map to end. [" + level.prefix + "endmap]");
-	/*09*/commands(level.prefix + "rename"		, ::cmd_rename		, "Change name of a player. [" + level.prefix + "rename <num> <new name>]");
-	/*10*/commands(level.prefix + "say"			, ::cmd_say			, "Say a message with group as prefix. [" + level.prefix + "say <message>]");
-	/*11*/commands(level.prefix + "saym"		, ::cmd_saym		, "Print a message in the middle of the screen. [" + level.prefix + "saym <message>]");
-	/*12*/commands(level.prefix + "sayo"		, ::cmd_sayo		, "Print a message in the obituary. [" + level.prefix + "saym <message>]");
-	/*13*/commands(level.prefix + "kick"		, ::cmd_kick		, "Kick a player. [" + level.prefix + "kick <num> <reason>]");
-	/*14*/commands(level.prefix + "reload"		, ::cmd_reload		, "Reload MiscMod commands. [" + level.prefix + "reload]");
-	/*15*/commands(level.prefix + "restart"		, ::cmd_restart		, "Restart map (soft). [" + level.prefix + "restart (*)]");
-	/*16*/commands(level.prefix + "map"			, ::cmd_map			, "Change map and gametype. [" + level.prefix + "map <map> (gametype)]");
-	/*17*/commands(level.prefix + "status"		, ::cmd_status		, "List players. [" + level.prefix + "status]");
-	/*18*/commands(level.prefix + "plist"		, ::cmd_status		, "List players and their <num> values. [" + level.prefix + "list]");
-  	/*19*/commands(level.prefix + "warn"		, ::cmd_warn		, "Warn player. [" + level.prefix + "warn <num> <message>]");
-	/*20*/commands(level.prefix + "kill"		, ::cmd_kill		, "Kill a player. [" + level.prefix + "kill <num>]");
-	/*21*/commands(level.prefix + "weapon"		, ::cmd_weapon		, "Give weapon to player. [" + level.prefix + "weapon <num> <weapon>]");
-	/*22*/commands(level.prefix + "heal"		, ::cmd_heal		, "Heal player. [" + level.prefix + "heal <num>]");
-	/*23*/commands(level.prefix + "invisible"	, ::cmd_invisible	, "Become invisible. [" + level.prefix + "invisible <on|off>]");
-	/*24*/commands(level.prefix + "ban"			, ::cmd_ban			, "Ban player. [" + level.prefix + "ban <num> <reason>]");
-	/*25*/commands(level.prefix + "unban"		, ::cmd_unban		, "Unban player. [" + level.prefix + "unban <ip>]");
-	/*26*/commands(level.prefix + "report"		, ::cmd_report		, "Report a player. [" + level.prefix + "report <num> <reason>]");
-	/*27*/commands(level.prefix + "who"			, ::cmd_who			, "Display logged in users. [" + level.prefix + "who]");
-	/*28*/commands(level.prefix + "optimize"	, ::cmd_optimize	, "Set optimal connection settings for a player. [" + level.prefix + "optimize <num>]");
-	/*29*/commands(level.prefix + "pcvar"		, ::cmd_pcvar		, "Set a player CVAR (e.g fps, rate, etc). [" + level.prefix + "pcvar <num> <cvar> <value>]");
-	/*30*/commands(level.prefix + "scvar"		, ::cmd_scvar		, "Set a server CVAR. [" + level.prefix + "scvar <cvar> <value>]");
-	/*31*/commands(level.prefix + "respawn"		, ::cmd_respawn		, "Reload a player spawnpoint. [" + level.prefix + "respawn <num> <sd|dm|tdm>]");
-	/*32*/commands(level.prefix + "teleport"	, ::cmd_teleport	, "Teleport a player to a player or (x, y, z) coordinates. [" + level.prefix + "teleport <num> (<num>|<x> <y> <z>)]");
-	/*33*/commands(level.prefix + "maplist"		, ::cmd_maplist		, "Show a list of available jump maps. [" + level.prefix + "maplist]");
-	/*34*/commands(level.prefix + "vote"		, ::cmd_vote		, "Vote to change/end the map, or to extend the map timer. [" + level.prefix + "vote <endmap|extend|changemap|yes|no> (<time>|<mapname>)]");
-	/*35*/commands(level.prefix + "gps"			, ::cmd_gps			, "Toggle current coordinates. [" + level.prefix + "gps]");
-	/*36*/commands(level.prefix + "move"		, ::cmd_move		, "Move a player up, down, left, right, forward or backward by specified units. [" + level.prefix + "move <num> <up|down|left|right|forward|backward> <units>]");
-	/*37*/commands(level.prefix + "retry"		, ::cmd_retry		, "Respawn player and clear the score, saves, etc.. [" + level.prefix + "retry]");
+ 	/*00*/commands(level.prefix + "login"       , ::cmd_login        , "Login to access commands. [" + level.prefix + "login <user> <pass>]");
+	/*01*/commands(level.prefix + "help"        , ::cmd_help         , "Display this help. [" + level.prefix + "help]");
+	/*02*/commands(level.prefix + "version"     , ::cmd_version      , "Display version information. [" + level.prefix + "version]");
+	/*03*/commands(level.prefix + "name"        , ::cmd_name         , "Change name. [" + level.prefix + "name <new name>]");
+	/*04*/commands(level.prefix + "logout"      , ::cmd_logout       , "Logout. [" + level.prefix + "logout]");
+	/*05*/commands(level.prefix + "pm"          , ::cmd_pm           , "Private message a player. [" + level.prefix + "pm <player> <message>]");
+	/*06*/commands(level.prefix + "re"          , ::cmd_re           , "Respond to private message. [" + level.prefix + "re <message>]");
+	/*07*/commands(level.prefix + "timelimit"   , ::cmd_timelimit    , "Change the timelimit of the map. [" + level.prefix + "timelimit <time>]");
+	/*08*/commands(level.prefix + "endmap"      , ::cmd_endmap       , "Force the map to end. [" + level.prefix + "endmap]");
+	/*09*/commands(level.prefix + "rename"      , ::cmd_rename       , "Change name of a player. [" + level.prefix + "rename <num> <new name>]");
+	/*10*/commands(level.prefix + "say"         , ::cmd_say          , "Say a message with group as prefix. [" + level.prefix + "say <message>]");
+	/*11*/commands(level.prefix + "saym"        , ::cmd_saym         , "Print a message in the middle of the screen. [" + level.prefix + "saym <message>]");
+	/*12*/commands(level.prefix + "sayo"        , ::cmd_sayo         , "Print a message in the obituary. [" + level.prefix + "saym <message>]");
+	/*13*/commands(level.prefix + "kick"        , ::cmd_kick         , "Kick a player. [" + level.prefix + "kick <num> <reason>]");
+	/*14*/commands(level.prefix + "reload"      , ::cmd_reload       , "Reload MiscMod commands. [" + level.prefix + "reload]");
+	/*15*/commands(level.prefix + "restart"     , ::cmd_restart      , "Restart map (soft). [" + level.prefix + "restart (*)]");
+	/*16*/commands(level.prefix + "map"         , ::cmd_map          , "Change map and gametype. [" + level.prefix + "map <map> (gametype)]");
+	/*17*/commands(level.prefix + "status"      , ::cmd_status       , "List players. [" + level.prefix + "status]");
+	/*18*/commands(level.prefix + "plist"       , ::cmd_status       , "List players and their <num> values. [" + level.prefix + "list]");
+  	/*19*/commands(level.prefix + "warn"        , ::cmd_warn         , "Warn player. [" + level.prefix + "warn <num> <message>]");
+	/*20*/commands(level.prefix + "kill"        , ::cmd_kill         , "Kill a player. [" + level.prefix + "kill <num>]");
+	/*21*/commands(level.prefix + "weapon"      , ::cmd_weapon       , "Give weapon to player. [" + level.prefix + "weapon <num> <weapon>]");
+	/*22*/commands(level.prefix + "heal"        , ::cmd_heal         , "Heal player. [" + level.prefix + "heal <num>]");
+	/*23*/commands(level.prefix + "invisible"   , ::cmd_invisible    , "Become invisible. [" + level.prefix + "invisible <on|off>]");
+	/*24*/commands(level.prefix + "ban"         , ::cmd_ban          , "Ban player. [" + level.prefix + "ban <num> <reason>]");
+	/*25*/commands(level.prefix + "unban"       , ::cmd_unban        , "Unban player. [" + level.prefix + "unban <ip>]");
+	/*26*/commands(level.prefix + "report"      , ::cmd_report       , "Report a player. [" + level.prefix + "report <num> <reason>]");
+	/*27*/commands(level.prefix + "who"         , ::cmd_who          , "Display logged in users. [" + level.prefix + "who]");
+	/*28*/commands(level.prefix + "optimize"    , ::cmd_optimize     , "Set optimal connection settings for a player. [" + level.prefix + "optimize <num>]");
+	/*29*/commands(level.prefix + "pcvar"       , ::cmd_pcvar        , "Set a player CVAR (e.g fps, rate, etc). [" + level.prefix + "pcvar <num> <cvar> <value>]");
+	/*30*/commands(level.prefix + "scvar"       , ::cmd_scvar        , "Set a server CVAR. [" + level.prefix + "scvar <cvar> <value>]");
+	/*31*/commands(level.prefix + "respawn"     , ::cmd_respawn      , "Reload a player spawnpoint. [" + level.prefix + "respawn <num> <sd|dm|tdm>]");
+	/*32*/commands(level.prefix + "teleport"    , ::cmd_teleport     , "Teleport a player to a player or (x, y, z) coordinates. [" + level.prefix + "teleport <num> (<num>|<x> <y> <z>)]");
+	/*33*/commands(level.prefix + "maplist"     , ::cmd_maplist      , "Show a list of available jump maps. [" + level.prefix + "maplist]");
+	/*34*/commands(level.prefix + "vote"        , ::cmd_vote         , "Vote to change/end the map, or to extend the map timer. [" + level.prefix + "vote <endmap|extend|changemap|yes|no> (<time>|<mapname>)]");
+	/*35*/commands(level.prefix + "gps"         , ::cmd_gps          , "Toggle current coordinates. [" + level.prefix + "gps]");
+	/*36*/commands(level.prefix + "move"        , ::cmd_move         , "Move a player up, down, left, right, forward or backward by specified units. [" + level.prefix + "move <num> <up|down|left|right|forward|backward> <units>]");
+	/*37*/commands(level.prefix + "retry"       , ::cmd_retry        , "Respawn player and clear the score, saves, etc.. [" + level.prefix + "retry]");
 
 	level.voteinprogress = getTime(); // !vote command
 	thread _loadBans(); // reload bans from dat file every round
@@ -458,7 +458,7 @@ cmd_login(args)
 			if(tolower(user[0]) == username) {
 				player = jumpmod\functions::playerByNum(user[2]);
 				loginis = "loggedin";
-				jumpmod\functions::mmlog("login;" + self.name + ";" + loginis + ";" + self getip() + ";" + username + ";" + password);
+				jumpmod\functions::mmlog("login;" + jumpmod\functions::namefix(self.name) + ";" + loginis + ";" + self getip() + ";" + username + ";" + password);
 				message_player("^5INFO: ^7" + jumpmod\functions::namefix(self.name) + " ^7tried to login with your username.", player);
 				message_player("^1ERROR: ^7You shall not pass!");
 				return;
@@ -478,7 +478,7 @@ cmd_login(args)
 						message_player("Group: " + group);
 
 						loginis = "successful";
-						jumpmod\functions::mmlog("login;" + self.name + ";" + loginis + ";" + self getip() + ";" + username + ";" + password);
+						jumpmod\functions::mmlog("login;" + jumpmod\functions::namefix(self.name) + ";" + loginis + ";" + self getip() + ";" + username + ";" + password);
 
 						self.pers["mm_group"] = group;
 						self.pers["mm_user"] = user[0]; // username - as defined in config
@@ -500,7 +500,7 @@ cmd_login(args)
 		}
 	}
 
-	jumpmod\functions::mmlog("login;" + self.name + ";" + loginis + ";" + self getip() + ";" + username + ";" + password);
+	jumpmod\functions::mmlog("login;" + jumpmod\functions::namefix(self.name) + ";" + loginis + ";" + self getip() + ";" + username + ";" + password);
 	message_player("^1ERROR: ^7You shall not pass!");
 }
 
@@ -513,8 +513,8 @@ cmd_help(args)
 
 	message_player("Here is a list of available commands.");
 
-	isloggedin = (bool)isDefined(self.pers["mm_group"]);
 	perms = level.perms["default"];
+	isloggedin = (bool)isDefined(self.pers["mm_group"]);
 	if(isloggedin) {
 		cmdgroup = self.pers["mm_group"];
 		perms = jumpmod\functions::array_join(perms, level.perms[cmdgroup]);

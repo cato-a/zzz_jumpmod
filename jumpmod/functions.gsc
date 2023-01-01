@@ -129,16 +129,10 @@ array_shuffle(arr)
 		return undefined;
 
 	for(i = 0; i < arr.size; i++) {
-		// Store the current array element in a variable
-		_tmp = arr[i];
-
-		// Generate a random number
-		rN = randomInt(arr.size);
-
-		// Replace the current with the random
-		arr[i] = arr[rN];
-		// Replace the random with the current
-		arr[rN] = _tmp;
+		_tmp = arr[i]; // Store the current array element in a variable
+		rN = randomInt(arr.size); // Generate a random number
+		arr[i] = arr[rN]; // Replace the current with the random
+		arr[rN] = _tmp; // Replace the random with the current
 	}
 
 	return arr;
