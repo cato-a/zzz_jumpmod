@@ -1,396 +1,396 @@
 // 22-10-2021: new namefix() function
 namefix(playername)
 {
-	if(!isDefined(playername))
-		return "";
+    if(!isDefined(playername))
+        return "";
 
-	allowedchars = " abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!'#[]<>/&()=?+`^~*-_.,;|$@:{}"; // " " (space) moved first as it is more frequent -- "�" removed, unknown what this char is?
-	cleanedname = "";
+    allowedchars = " abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!'#[]<>/&()=?+`^~*-_.,;|$@:{}"; // " " (space) moved first as it is more frequent -- "�" removed, unknown what this char is?
+    cleanedname = "";
 
-	for(i = 0; i < playername.size; i++) {
-		for(z = 0; z < allowedchars.size; z++) {
-			if(playername[i] == allowedchars[z]) {
-				cleanedname += playername[i];
-				break;
-			}
-		}
-	}
+    for(i = 0; i < playername.size; i++) {
+        for(z = 0; z < allowedchars.size; z++) {
+            if(playername[i] == allowedchars[z]) {
+                cleanedname += playername[i];
+                break;
+            }
+        }
+    }
 
-	return cleanedname;
+    return cleanedname;
 }
 
 _spawn(spawnpointname) // Renamed from _oldspawn() in zzfun_supplement
 {
-	spawnpoints = getEntArray(spawnpointname, "classname");
-	spawnpoint = maps\mp\gametypes\_spawnlogic::getSpawnpoint_Random(spawnpoints);
+    spawnpoints = getEntArray(spawnpointname, "classname");
+    spawnpoint = maps\mp\gametypes\_spawnlogic::getSpawnpoint_Random(spawnpoints);
 
-	if(isDefined(spawnpoint)) {
-		if(positionWouldTelefrag(spawnpoint.origin)) {
-			self iPrintLn("^1ERROR:^7 Bad spawnpoint finding new, please wait.");
-			self _newspawn(spawnpoint.origin, spawnpoint.angles);
-		} else
-			self spawn(spawnpoint.origin, spawnpoint.angles);
-	} else
-		maps\mp\_utility::error("NO " + spawnpointname + " SPAWNPOINTS IN MAP");
+    if(isDefined(spawnpoint)) {
+        if(positionWouldTelefrag(spawnpoint.origin)) {
+            self iPrintLn("^1ERROR:^7 Bad spawnpoint finding new, please wait.");
+            self _newspawn(spawnpoint.origin, spawnpoint.angles);
+        } else
+            self spawn(spawnpoint.origin, spawnpoint.angles);
+    } else
+        maps\mp\_utility::error("NO " + spawnpointname + " SPAWNPOINTS IN MAP");
 }
 
 _newspawn(position, angles, recursive) // 2022 code: threads for recursive?
 {
-	newspawn = [];
+    newspawn = [];
 
-	for(i = 0; i < 360; i += 36) {
-		angle = (0, i, 0);
+    for(i = 0; i < 360; i += 36) {
+        angle = (0, i, 0);
 
-		trace = bulletTrace(position, position + maps\mp\_utility::vectorscale(anglesToForward(angle), 48), true, self);
-		if(trace["fraction"] == 1 && !positionWouldTelefrag(trace["position"]) && _canspawnat(trace["position"])) {
-			self spawn(trace["position"], angles);
-			return trace["position"];
-		}
+        trace = bulletTrace(position, position + maps\mp\_utility::vectorscale(anglesToForward(angle), 48), true, self);
+        if(trace["fraction"] == 1 && !positionWouldTelefrag(trace["position"]) && _canspawnat(trace["position"])) {
+            self spawn(trace["position"], angles);
+            return trace["position"];
+        }
 
-		newspawn[newspawn.size] = trace["position"];
-		wait 0.05;
-	}
+        newspawn[newspawn.size] = trace["position"];
+        wait 0.05;
+    }
 
-	if(!isDefined(recursive)) {
-		for(j = 0; j < newspawn.size; j++) {
-			if(isDefined(newspawn[j]))
-				_newspawn(newspawn[j], angles, true);
-		}
+    if(!isDefined(recursive)) {
+        for(j = 0; j < newspawn.size; j++) {
+            if(isDefined(newspawn[j]))
+                _newspawn(newspawn[j], angles, true);
+        }
 
-		return position; // giving up, push anyways
-	}
+        return position; // giving up, push anyways
+    }
 }
 
 _canspawnat(position) // 2022 code: this fixes bug introduced by original coder, like 12+ years ago...
 {
-	position = position + (-32, -32, 0);
-	for(x = 0; x < 64; x++) {
-		for(y = 0; y < 64; y++) {
-			trace = bulletTrace(position + (x, y, 0), position + (x, y, 72), true, self);
+    position = position + (-32, -32, 0);
+    for(x = 0; x < 64; x++) {
+        for(y = 0; y < 64; y++) {
+            trace = bulletTrace(position + (x, y, 0), position + (x, y, 72), true, self);
 
-			if(trace["fraction"] != 1)
-				return false;
-		}
-	}
+            if(trace["fraction"] != 1)
+                return false;
+        }
+    }
 
-	return true;
+    return true;
 }
 
 strTok(text, separator) // From: _mm_mmm.gsc
 {
-	token = 0;
-	tokens = [];
+    token = 0;
+    tokens = [];
 
-	for(i = 0; i < text.size; i++) {
-		if(text[i] != separator) {
-			if(!isDefined(tokens[token]))
-				tokens[token] = "";
+    for(i = 0; i < text.size; i++) {
+        if(text[i] != separator) {
+            if(!isDefined(tokens[token]))
+                tokens[token] = "";
 
-			tokens[token] += text[i];
-		} else {
-			if(isDefined(tokens[token]))
-				token++;
-		}
-	}
+            tokens[token] += text[i];
+        } else {
+            if(isDefined(tokens[token]))
+                token++;
+        }
+    }
 
-	return tokens;
+    return tokens;
 }
 
 isOnLadder() { // Cheese :D
-	if(!isDefined(self) || !isAlive(self) || self.sessionstate != "playing")
-		return false;
+    if(!isDefined(self) || !isAlive(self) || self.sessionstate != "playing")
+        return false;
 
-	if(!self isOnGround() && self getCurrentWeapon() == "none")
-		return true;
+    if(!self isOnGround() && self getCurrentWeapon() == "none")
+        return true;
 
-	return false;
+    return false;
 }
 
 getWeaponSlot(weapon)
 {
-	if(!isDefined(weapon))
-		return "none";
+    if(!isDefined(weapon))
+        return "none";
 
-	if(weapon == self getWeaponSlotWeapon("primary"))
-		weaponSlot = "primary";
-	else if(weapon == self getWeaponSlotWeapon("primaryb"))
-		weaponSlot = "primaryb";
-	else if(weapon == self getWeaponSlotWeapon("grenade"))
-		weaponSlot = "grenade";
-	else
-		weaponSlot = "pistol";
+    if(weapon == self getWeaponSlotWeapon("primary"))
+        weaponSlot = "primary";
+    else if(weapon == self getWeaponSlotWeapon("primaryb"))
+        weaponSlot = "primaryb";
+    else if(weapon == self getWeaponSlotWeapon("grenade"))
+        weaponSlot = "grenade";
+    else
+        weaponSlot = "pistol";
 
-	return weaponSlot;
+    return weaponSlot;
 }
 
 array_shuffle(arr)
 {
-	if(!isDefined(arr))
-		return undefined;
+    if(!isDefined(arr))
+        return undefined;
 
-	for(i = 0; i < arr.size; i++) {
-		_tmp = arr[i]; // Store the current array element in a variable
-		rN = randomInt(arr.size); // Generate a random number
-		arr[i] = arr[rN]; // Replace the current with the random
-		arr[rN] = _tmp; // Replace the random with the current
-	}
+    for(i = 0; i < arr.size; i++) {
+        _tmp = arr[i]; // Store the current array element in a variable
+        rN = randomInt(arr.size); // Generate a random number
+        arr[i] = arr[rN]; // Replace the current with the random
+        arr[rN] = _tmp; // Replace the random with the current
+    }
 
-	return arr;
+    return arr;
 }
 
 in_array(arr, needle)
 {
-	if(!isDefined(arr) || !isDefined(needle))
-		return undefined;
+    if(!isDefined(arr) || !isDefined(needle))
+        return undefined;
 
-	for(i = 0; i < arr.size; i++)
-		if(arr[i] == needle)
-			return true;
+    for(i = 0; i < arr.size; i++)
+        if(arr[i] == needle)
+            return true;
 
-	return false;
+    return false;
 }
 
 array_remove(arr, str, r) // NEED URGENT OPTIMIZE - If set to true, it will remove previous element aswell.
 {
-	if(!isDefined(arr) || !isDefined(str))
-		return undefined;
+    if(!isDefined(arr) || !isDefined(str))
+        return undefined;
 
-	if(!isDefined(r))
-		r = false;
+    if(!isDefined(r))
+        r = false;
 
-	x = 0;
-	_tmpa = [];
-	for(i = 0; i < arr.size; i++) {
-		if(arr[i] != str) {
-			_tmpa[x] = arr[i];
-			x++;
-		} else {
-			if(r) {
-				_tmpa[x - 1] = undefined;
-				x--;
-			}
-		}
-	}
+    x = 0;
+    _tmpa = [];
+    for(i = 0; i < arr.size; i++) {
+        if(arr[i] != str) {
+            _tmpa[x] = arr[i];
+            x++;
+        } else {
+            if(r) {
+                _tmpa[x - 1] = undefined;
+                x--;
+            }
+        }
+    }
 
-	_tmp = _tmpa;
+    _tmp = _tmpa;
 
-	if(r) {
-		y = 0;
-		_tmpb = [];
-		for(i = 0; i < _tmpa.size; i++) {
-			if(isDefined(_tmpa[i])) {
-				_tmpb[y] = _tmpa[i];
-				y++;
-			}
-		}
+    if(r) {
+        y = 0;
+        _tmpb = [];
+        for(i = 0; i < _tmpa.size; i++) {
+            if(isDefined(_tmpa[i])) {
+                _tmpb[y] = _tmpa[i];
+                y++;
+            }
+        }
 
-		_tmp = _tmpb;
-	}
+        _tmp = _tmpb;
+    }
 
-	return _tmp;
+    return _tmp;
 }
 
 strip(s)
 {
-	if(s == "")
-		return "";
+    if(s == "")
+        return "";
 
-	s2 = "";
-	s3 = "";
+    s2 = "";
+    s3 = "";
 
-	i = 0;
-	while(i < s.size && s[i] == " ")
-		i++;
+    i = 0;
+    while(i < s.size && s[i] == " ")
+        i++;
 
-	if(i == s.size)
-		return "";
+    if(i == s.size)
+        return "";
 
-	for(; i < s.size; i++)
-		s2 += s[i];
+    for(; i < s.size; i++)
+        s2 += s[i];
 
-	i = (s2.size - 1);
-	while(s2[i] == " " && i > 0)
-		i--;
+    i = (s2.size - 1);
+    while(s2[i] == " " && i > 0)
+        i--;
 
-	for(j = 0; j <= i; j++)
-		s3 += s2[j];
+    for(j = 0; j <= i; j++)
+        s3 += s2[j];
 
-	return s3;
+    return s3;
 }
 
 strTru(str, len, ind)
 {
-	if(!isDefined(ind))
-		ind = " >";
+    if(!isDefined(ind))
+        ind = " >";
 
-	len = len + ind.size;
-	if(str.size <= len)
-		return str;
+    len = len + ind.size;
+    if(str.size <= len)
+        return str;
 
-	len = len - ind.size;
+    len = len - ind.size;
 
-	new = "";
-	for(i = 0; i < len; i++)
-		new = new + str[i];
+    new = "";
+    for(i = 0; i < len; i++)
+        new = new + str[i];
 
-	return new + ind;
+    return new + ind;
 }
 
 playerByNum(num)
 {
-	if(validate_number(num)) {
-		if(((int)num >= 0 || (int)num <= 64)) {
-			player = GetEntByNum(num);
-			if(isPlayer(player))
-				return player;
-		}
-	}
+    if(validate_number(num)) {
+        if(((int)num >= 0 || (int)num <= 64)) {
+            player = GetEntByNum(num);
+            if(isPlayer(player))
+                return player;
+        }
+    }
 
-	return undefined;
+    return undefined;
 }
 
 validate_number(input, isfloat)
 {
-	if(!isDefined(input))
-		return false;
+    if(!isDefined(input))
+        return false;
 
-	input += ""; // convert to str
+    input += ""; // convert to str
 
-	if(!isDefined(isfloat))
-		isfloat = false;
+    if(!isDefined(isfloat))
+        isfloat = false;
 
-	hasdot = false;
-	for(i = 0; i < input.size; i++) {
-		switch(input[i]) {
-			case "0": case "1": case "2":
-			case "3": case "4": case "5":
-			case "6": case "7": case "8":
-			case "9":
-			break;
-			case ".": // 0.1..., no need for .1 etc yet... but could be validated by removing i == 0
-				if(!isfloat || i == 0 || (i + 1) == input.size || hasdot)
-					return false;
+    hasdot = false;
+    for(i = 0; i < input.size; i++) {
+        switch(input[i]) {
+            case "0": case "1": case "2":
+            case "3": case "4": case "5":
+            case "6": case "7": case "8":
+            case "9":
+            break;
+            case ".": // 0.1..., no need for .1 etc yet... but could be validated by removing i == 0
+                if(!isfloat || i == 0 || (i + 1) == input.size || hasdot)
+                    return false;
 
-				hasdot = true;
-			break;
-			case "-": // allow "negative" numbers
-				if(i == 0 && input.size > 1) //if(i == 0 && input.size > 1 && input[i] == "-")
-					break;
-			default:
-				return false;
-		}
-	}
+                hasdot = true;
+            break;
+            case "-": // allow "negative" numbers
+                if(i == 0 && input.size > 1) //if(i == 0 && input.size > 1 && input[i] == "-")
+                    break;
+            default:
+                return false;
+        }
+    }
 
-	return true;
+    return true;
 }
 
 mmlog(msg)
 {
-	printconsole(msg + "\n");
-	logPrint(msg + "\n");
+    printconsole(msg + "\n");
+    logPrint(msg + "\n");
 }
 
 monotone(str, loop)
 {
-	if(!isDefined(str))
-		return "";
+    if(!isDefined(str))
+        return "";
 
-	_str = "";
-	for(i = 0; i < str.size; i++) {
-		if(str[i] == "^" &&
-			((i + 1) < str.size &&
-				(validate_number(str[i + 1]))
-			)) {
-			i++;
-			continue;
-		}
+    _str = "";
+    for(i = 0; i < str.size; i++) {
+        if(str[i] == "^" &&
+            ((i + 1) < str.size &&
+                (validate_number(str[i + 1]))
+            )) {
+            i++;
+            continue;
+        }
 
-		_str += str[i];
-	}
+        _str += str[i];
+    }
 
-	if(!isDefined(loop))
-		_str = monotone(_str, true);
+    if(!isDefined(loop))
+        _str = monotone(_str, true);
 
-	return _str;
+    return _str;
 }
 
 pmatch(s, p)
 {
-	if(p.size > s.size)
-		return false;
+    if(p.size > s.size)
+        return false;
 
-	o = 0;
-	while(o <= (s.size - p.size)) {
-		for(i = 0; i < p.size; i++)
-			if(p[i] != s[i + o])
-				break;
+    o = 0;
+    while(o <= (s.size - p.size)) {
+        for(i = 0; i < p.size; i++)
+            if(p[i] != s[i + o])
+                break;
 
-		if(i == p.size)
-			return true;
+        if(i == p.size)
+            return true;
 
-		o++;
-	}
+        o++;
+    }
 
-	return false;
+    return false;
 }
 
 array_join(arrTo, arrFrom)
 {
-	if(!isDefined(arrTo) || !isDefined(arrFrom))
-		return undefined;
+    if(!isDefined(arrTo) || !isDefined(arrFrom))
+        return undefined;
 
-	for(i = 0; i < arrFrom.size; i++)
-		arrTo[arrTo.size] = arrFrom[i];
+    for(i = 0; i < arrFrom.size; i++)
+        arrTo[arrTo.size] = arrFrom[i];
 
-	return arrTo;
+    return arrTo;
 }
 
 getPlayersByName(n1)
 {
-	a = [];
-	p = getOnlinePlayers();
-	for(i = 0; i < p.size; i++) {
-		n2 = monotone(p[i].name);
-		n2 = strip(n2);
-		if(n2.size >= n1.size) {
-			if(pmatch(tolower(n2), tolower(n1)))
-				a[a.size] = p[i];
-		}
-	}
+    a = [];
+    p = getOnlinePlayers();
+    for(i = 0; i < p.size; i++) {
+        n2 = monotone(p[i].name);
+        n2 = strip(n2);
+        if(n2.size >= n1.size) {
+            if(pmatch(tolower(n2), tolower(n1)))
+                a[a.size] = p[i];
+        }
+    }
 
-	return a;
+    return a;
 }
 
 getOnlinePlayers() // get all online players, apparently getEntArray doesn't list 999/connecting players
 {
-	p = [];
+    p = [];
 
-	maxclients = GetCvarInt("sv_maxClients");
-	if(maxclients < 0 || maxclients > 64)
-		return p;
+    maxclients = GetCvarInt("sv_maxClients");
+    if(maxclients < 0 || maxclients > 64)
+        return p;
 
-	for(i = 0; i < maxclients; i++) {
-		player = GetEntByNum(i);
-		if(isDefined(player))
-			p[p.size] = player;
-	}
+    for(i = 0; i < maxclients; i++) {
+        player = GetEntByNum(i);
+        if(isDefined(player))
+            p[p.size] = player;
+    }
 
-	return p;
+    return p;
 }
 
 addBotClients()
 {
-	wait 1;
+    wait 1;
 
-	for(;;) {
-		iNumBots = getCvarInt("scr_numbots");
-		if(iNumBots > 0)
-			break;
-		wait 1;
-	}
+    for(;;) {
+        iNumBots = getCvarInt("scr_numbots");
+        if(iNumBots > 0)
+            break;
+        wait 1;
+    }
 
-	for(i = 0; i < iNumBots; i++) {
-		addtestclient();
-		wait 0.25;
-	}
+    for(i = 0; i < iNumBots; i++) {
+        addtestclient();
+        wait 0.25;
+    }
 }
