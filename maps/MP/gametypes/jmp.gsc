@@ -1204,6 +1204,8 @@ mapsetup()
 
         case "krime_pyramid":
             level.timelimit = 20;
+
+            healspots[0] = (-1169, 1799, 459);
         break;
 
         case "ls_darkness":
