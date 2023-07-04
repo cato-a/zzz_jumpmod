@@ -591,10 +591,25 @@ jumpmod()
     thread jumpmod\functions::addBotClients();
 
     level.bounceon = (bool)(getCvar("x_cl_bounce") == "1");
-    if(level.bounceon)
-        setCvar("g_speed", 210);
-    else
-        setCvar("g_speed", 190);
+    g_speed = 190;
+    if(level.bounceon) {
+        g_speed += 20; // 210
+
+        mapspeed = GetCvar("scr_jmp_mapspeed"); // if only 220, simplify this?
+        if(mapspeed != "") {
+            mapspeed = jumpmod\functions::strTok(mapspeed, " ");
+            mapname = tolower(level.mapname);
+            for(i = 0; i < mapspeed.size; i++) {
+                _mapspeed = jumpmod\functions::strTok(mapspeed[i], ":");
+                if(mapname == _mapspeed[0]) {
+                    g_speed = (int)_mapspeed[1];
+                    break;
+                }
+            }
+        }
+    }
+
+    setCvar("g_speed", g_speed);
 
     for(;;) {
         checkTimeLimit();
