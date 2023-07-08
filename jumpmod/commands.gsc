@@ -2640,3 +2640,62 @@ cmd_retry_clear(origin, angles) // not a cmd
         self maps\MP\gametypes\jmp::jmpWeapons(); // TODO: improve
     }
 }
+
+cmd_insult(args)
+{
+    if(!isDefined(level.insults) || level.insultcount >= level.insults.size - 1) {
+        insults[0]  = "^1's mom is like a hardware store... 10 cents a screw.";
+        insults[1]  = "^1. I'd like to see things from your point of view but I can't seem to get my head that far up my ass.";
+        insults[2]  = "^1's mom is so poor, she once fought a blind squirrel for a peanut.";
+        insults[3]  = "^1 is so stupid he tried to eat a crayon because it looked fruity!";
+        insults[4]  = "^1 is so stupid he tought a 'quarter back' is a refund.";
+        insults[5]  = "^1 is so poor he uses an ice cube as his A/C.";
+        insults[6]  = "^1. If you were any more stupid, he'd have to be watered twice a week.";
+        insults[7]  = "^1. I could make a monkey out of you, but why should I take all the credit?";
+        insults[8]  = "^1. I heard you got a brain transplant and the brain rejected you!";
+        insults[9]  = "^1. How did you get here? Did someone leave your cage open?";
+        insults[10] = "^1 got more issues than National Geographic!";
+        insults[11] = "^1. If you were my dog, I'd shave your butt and teach you to walk backwards.";
+        insults[12] = "^1. You're the reason God created the middle finger.";
+        insults[13] = "^1. I hear that when your mother first saw you, she decided to leave you on the front steps of a police station while she turned herself in.";
+        insults[14] = "^1. Your IQ involves the square root of -1.";
+        insults[15] = "^1. You know you're a bad gamer when you still miss with an aimbot.";
+        insults[16] = "^1. You're such a nerd that your penis plugs into a flash drive.";
+        insults[17] = "^1's mom is so FAT32, she wouldn't be accepted by NTFS!";
+        insults[18] = "^1. You're not important - you're just an NPC!";
+        insults[19] = "^1, you're so slow, is your ping at 999?";
+        insults[20] = "^1. You're not optimized for life are you?";
+        insults[21] = "^1. You must have been born on a highway because that's where most accidents happen.";
+        insults[22] = "^1. Why don't you slip into something more comfortable... like a coma.";
+        insults[23] = "^1. I had a nightmare. I dreamt I was you.";
+        insults[24] = "^1. Lets play 'house'. You be the door and I'll slam you.";
+        insults[25] = "^1, I'm gonna get you a condom. That way you can have protection when you go fuck yourself.";
+        insults[26] = "^1. Roses are red, violets are blue, I have 5 fingers, the 3rd ones for you.";
+        insults[27] = "^1. Ever since I saw you in your family tree, I've wanted to cut it down.";
+        insults[28] = "^1, your village just called. They're missing an idiot.";
+        insults[29] = "^1, I can't think of an insult stupid enough for you.";
+
+        level.insults = jumpmod\functions::array_shuffle(insults)
+        level.insultcount = 0;
+    }
+
+    if(args.size < 2) {
+        message_player("^1ERROR: ^7Invalid number of arguments.");
+        return;
+    }
+
+    args1 = args[1]; // num | string
+    if(jumpmod\functions::validate_number(args1)) {
+        player = jumpmod\functions::playerByNum(args1);
+        if(!isDefined(player)) {
+            message_player("^1ERROR: ^7No such player.");
+            return;
+        }
+    } else {
+        player = playerByName(args1);
+        if(!isDefined(player)) return;
+    }
+
+    iPrintLnBold(jumpmod\functions::namefix(player.name) + level.insults[level.insultcount]);
+    level.insultcount++;
+}
