@@ -164,6 +164,7 @@ Callback_StartGameType()
 
 Callback_PlayerConnect()
 {
+    self notify("disconnect");
     checkbannedip = self getip();
     banindex = jumpmod\commands::isbanned(checkbannedip);
     if(banindex != -1) {
