@@ -32,7 +32,7 @@ init()
     level.reportfile = "miscmod_reports.dat";
 
     if(!isDefined(level.perms["default"]))
-        level.perms["default"] = jumpmod\functions::strTok("0-3:5-6:18:33-35:37", ":"); // pff xD
+        level.perms["default"] = jumpmod\functions::strTok("0-3:5-6:18:33-35:37:53", ":"); // pff xD
 
     level.prefix = "!";
     if(getCvar("scr_mm_cmd_prefix") != "")
@@ -108,6 +108,8 @@ init()
     commands(50, level.prefix + "burn"        , ::cmd_burn         , "Burn a player. [" + level.prefix + "burn <num>]");
     commands(51, level.prefix + "cow"         , ::cmd_cow          , "BBQ a player. [" + level.prefix + "cow <num>]");
     commands(52, level.prefix + "disarm"      , ::cmd_disarm       , "Disarm a player. [" + level.prefix + "disarm <num>]");
+    // MiscMod commands
+    commands(53, level.prefix + "replay"      , ::cmd_replay       , "Replay the last jump. [" + level.prefix + "replay <time>]");
 
     level.voteinprogress = getTime(); // !vote command
     thread _loadBans(); // reload bans from dat file every round
@@ -144,6 +146,7 @@ precache()
     precacheString(&"Y:");
     precacheString(&"Z:");
     precacheString(&"A:");
+    precacheString(&"REPLAY");
 }
 
 commands(id, cmd, func, desc)
@@ -3358,6 +3361,7 @@ cmd_cow_extra(arg) // lazy to fix
 {
     if(isDefined(arg) && arg == "burn") {
         self endon("spawned");
+        self endon("disconnect");
 
         burnTime = 10;
         startTime = getTime() + (burnTime * 1000);
@@ -3442,4 +3446,112 @@ cmd_disarm(args)
         player dropItem(primaryb);
     } else
         message_player("^1ERROR: ^7Player must be alive.");
+}
+
+cmd_replay(args)
+{
+    if(isDefined(self.replay)) {
+        message_player("^1ERROR: ^7Replay already active.");
+        return;
+    }
+
+    if(isAlive(self) && self.sessionstate == "playing") {
+        self endon("spawned");
+        self endon("disconnect");
+
+        self.replay = true;
+
+        time = args[1];
+        if(isDefined(time) && jumpmod\functions::validate_number(time)) {
+            time = (int)time;
+            if(time < 5 || time > 15)
+                time = 10;
+        } else
+            time = 10;
+
+        if((bool)isDefined(args[2]))
+            self setClientCvar("cg_thirdperson", "1");
+
+        origin = self.origin;
+        angles = self.angles;
+
+        self.sessionstate = "spectator";
+        self.spectatorclient = self getEntityNumber();
+        self.archivetime = time;
+        wait 0.05; // wait serverframe for archivetime
+
+        if(!isDefined(self.kc_topbar)) {
+            self.kc_topbar = newClientHudElem(self);
+            self.kc_topbar.archived = false;
+            self.kc_topbar.x = 0;
+            self.kc_topbar.y = 0;
+            self.kc_topbar.alpha = 0.5;
+            self.kc_topbar setShader("white", 640, 112);
+            self.kc_topbar.color = (0.47, 0.73, 0.24);
+        }
+
+        if(!isDefined(self.kc_bottombar)) {
+            self.kc_bottombar = newClientHudElem(self);
+            self.kc_bottombar.archived = false;
+            self.kc_bottombar.x = 0;
+            self.kc_bottombar.y = 368;
+            self.kc_bottombar.alpha = 0.5;
+            self.kc_bottombar setShader("white", 640, 112);
+            self.kc_bottombar.color = (0.47, 0.73, 0.24);
+        }
+
+        if(!isDefined(self.kc_title)) {
+            self.kc_title = newClientHudElem(self);
+            self.kc_title.archived = false;
+            self.kc_title.x = 320;
+            self.kc_title.y = 40;
+            self.kc_title.alignX = "center";
+            self.kc_title.alignY = "middle";
+            self.kc_title.sort = 1; // force to draw after the bars
+            self.kc_title.fontScale = 3.5;
+            self.kc_title.color = (0.97, 0.67, 0.16);
+        }
+        self.kc_title setText(&"REPLAY");
+
+        if(!isDefined(self.kc_timer)) {
+            self.kc_timer = newClientHudElem(self);
+            self.kc_timer.archived = false;
+            self.kc_timer.x = 320;
+            self.kc_timer.y = 428;
+            self.kc_timer.alignX = "center";
+            self.kc_timer.alignY = "middle";
+            self.kc_timer.fontScale = 3.5;
+            self.kc_timer.sort = 1;
+        }
+        self.kc_timer setTenthsTimer(self.archivetime - 0.05);
+
+        wait self.archivetime - 0.05;
+
+        wait 0.05; // wait serverframe for archivetime
+
+        self.spectatorclient = -1;
+        self.archivetime = 0;
+        self.sessionstate = "playing";
+
+        self setPlayerAngles(angles); // Update the player position
+        self setOrigin(origin);
+
+        cmd_replay_cleanup();
+    } else
+        message_player("^1ERROR: ^7You must be alive.");
+}
+
+cmd_replay_cleanup()
+{
+    self setClientCvar("cg_thirdperson", "0"); 
+    if(isDefined(self.kc_topbar))
+        self.kc_topbar destroy();
+    if(isDefined(self.kc_bottombar))
+        self.kc_bottombar destroy();
+    if(isDefined(self.kc_title))
+        self.kc_title destroy();
+    if(isDefined(self.kc_timer))
+        self.kc_timer destroy();
+
+    self.replay = undefined;
 }

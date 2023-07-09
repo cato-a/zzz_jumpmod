@@ -670,6 +670,9 @@ spawnPlayer()
     self.spectatorclient = -1;
     self.archivetime = 0;
 
+    if(isDefined(self.replay))
+        jumpmod\commands::cmd_replay_cleanup();
+
     spawnpointname = "mp_deathmatch_spawn";
     jumpmod\functions::_spawn(spawnpointname);
 
@@ -708,6 +711,9 @@ spawnSpectator(origin, angles)
     self.spectatorclient = -1;
     self.archivetime = 0;
 
+    if(isDefined(self.replay))
+        jumpmod\commands::cmd_replay_cleanup();
+
     if(self.pers["team"] == "spectator")
         self.statusicon = "gfx/hud/hud@objective_bel.tga";
 
@@ -730,6 +736,9 @@ spawnIntermission()
     self.sessionstate = "intermission";
     self.spectatorclient = -1;
     self.archivetime = 0;
+
+    if(isDefined(self.replay))
+        jumpmod\commands::cmd_replay_cleanup();
 
     spawnpointname = "mp_deathmatch_intermission";
     spawnpoints = getEntArray(spawnpointname, "classname");
