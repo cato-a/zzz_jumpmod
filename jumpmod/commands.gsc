@@ -165,7 +165,7 @@ command(str)
         return;
     }
 
-    if(!isDefined(self.pers["mm_group"])) {
+    if(!isDefined(self.pers["mm_group"]) && isDefined(self.pers["mm_chatmessages"])) {
         penaltytime = level.messagepentime;
 
         if(self.pers["mm_chatmessages"] > level.messageburst) // mm_chatmessages set in PlayerConnect()
