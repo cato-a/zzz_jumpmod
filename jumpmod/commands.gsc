@@ -91,6 +91,7 @@ init()
     commands(35, level.prefix + "gps"         , ::cmd_gps          , "Toggle current coordinates. [" + level.prefix + "gps]");
     commands(36, level.prefix + "move"        , ::cmd_move         , "Move a player up, down, left, right, forward or backward by specified units. [" + level.prefix + "move <num> <up|down|left|right|forward|backward> <units>]");
     commands(37, level.prefix + "retry"       , ::cmd_retry        , "Respawn player and clear the score, saves, etc.. [" + level.prefix + "retry]");
+    commands(38, level.prefix + "insult"      , ::cmd_insult       , "Insult a player. [" + level.prefix + "insult]");
 
     level.voteinprogress = getTime(); // !vote command
     thread _loadBans(); // reload bans from dat file every round
