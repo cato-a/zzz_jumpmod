@@ -195,6 +195,7 @@ Callback_PlayerConnect()
     self.pers["mm_chatmessages"] = 1;
 
     thread jumpmod\commands::_checkLoggedIn();
+    self thread mmKeys();
 
     if(game["state"] == "intermission") {
         spawnIntermission();
@@ -693,7 +694,6 @@ spawnPlayer()
 
     // self thread jmpMeleeKey();
     // self thread jmpUseKey();
-    self thread mmKeys();
     self thread jmpAntiblock();
     self thread jmpWeapons();
 
