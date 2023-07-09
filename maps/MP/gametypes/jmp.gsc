@@ -14,6 +14,8 @@ main()
     level.timelimit = 30; // 30 minutes
     level.mapname = getCvar("mapname");
     level.gametype = tolower(getCvar("g_gametype"));
+    level.averageframes = GetCvarInt("sv_fps");
+    level.frametime = 1.0 / (float)level.averageframes; // Cheese :)
 
     /* Here we setup the maps and start loop with fixes
         - level.timelimit overrides
