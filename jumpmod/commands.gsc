@@ -3480,50 +3480,50 @@ cmd_replay(args)
         self.archivetime = time;
         wait 0.05; // wait serverframe for archivetime
 
-        if(!isDefined(self.kc_topbar)) {
-            self.kc_topbar = newClientHudElem(self);
-            self.kc_topbar.archived = false;
-            self.kc_topbar.x = 0;
-            self.kc_topbar.y = 0;
-            self.kc_topbar.alpha = 0.5;
-            self.kc_topbar setShader("white", 640, 112);
-            self.kc_topbar.color = (0.47, 0.73, 0.24);
+        if(!isDefined(self.replay_topbar)) {
+            self.replay_topbar = newClientHudElem(self);
+            self.replay_topbar.archived = false;
+            self.replay_topbar.x = 0;
+            self.replay_topbar.y = 0;
+            self.replay_topbar.alpha = 0.5;
+            self.replay_topbar setShader("white", 640, 112);
+            self.replay_topbar.color = (0.47, 0.73, 0.24);
         }
 
-        if(!isDefined(self.kc_bottombar)) {
-            self.kc_bottombar = newClientHudElem(self);
-            self.kc_bottombar.archived = false;
-            self.kc_bottombar.x = 0;
-            self.kc_bottombar.y = 368;
-            self.kc_bottombar.alpha = 0.5;
-            self.kc_bottombar setShader("white", 640, 112);
-            self.kc_bottombar.color = (0.47, 0.73, 0.24);
+        if(!isDefined(self.replay_bottombar)) {
+            self.replay_bottombar = newClientHudElem(self);
+            self.replay_bottombar.archived = false;
+            self.replay_bottombar.x = 0;
+            self.replay_bottombar.y = 368;
+            self.replay_bottombar.alpha = 0.5;
+            self.replay_bottombar setShader("white", 640, 112);
+            self.replay_bottombar.color = (0.47, 0.73, 0.24);
         }
 
-        if(!isDefined(self.kc_title)) {
-            self.kc_title = newClientHudElem(self);
-            self.kc_title.archived = false;
-            self.kc_title.x = 320;
-            self.kc_title.y = 40;
-            self.kc_title.alignX = "center";
-            self.kc_title.alignY = "middle";
-            self.kc_title.sort = 1; // force to draw after the bars
-            self.kc_title.fontScale = 3.5;
-            self.kc_title.color = (0.97, 0.67, 0.16);
+        if(!isDefined(self.replay_title)) {
+            self.replay_title = newClientHudElem(self);
+            self.replay_title.archived = false;
+            self.replay_title.x = 320;
+            self.replay_title.y = 40;
+            self.replay_title.alignX = "center";
+            self.replay_title.alignY = "middle";
+            self.replay_title.sort = 1; // force to draw after the bars
+            self.replay_title.fontScale = 3.5;
+            self.replay_title.color = (0.97, 0.67, 0.16);
+            self.replay_title setText(&"REPLAY");
         }
-        self.kc_title setText(&"REPLAY");
 
-        if(!isDefined(self.kc_timer)) {
-            self.kc_timer = newClientHudElem(self);
-            self.kc_timer.archived = false;
-            self.kc_timer.x = 320;
-            self.kc_timer.y = 428;
-            self.kc_timer.alignX = "center";
-            self.kc_timer.alignY = "middle";
-            self.kc_timer.fontScale = 3.5;
-            self.kc_timer.sort = 1;
+        if(!isDefined(self.replay_timer)) {
+            self.replay_timer = newClientHudElem(self);
+            self.replay_timer.archived = false;
+            self.replay_timer.x = 320;
+            self.replay_timer.y = 428;
+            self.replay_timer.alignX = "center";
+            self.replay_timer.alignY = "middle";
+            self.replay_timer.fontScale = 3.5;
+            self.replay_timer.sort = 1;
+            self.replay_timer setTenthsTimer(self.archivetime - 0.05);
         }
-        self.kc_timer setTenthsTimer(self.archivetime - 0.05);
 
         wait self.archivetime - 0.05;
 
@@ -3544,14 +3544,14 @@ cmd_replay(args)
 cmd_replay_cleanup()
 {
     self setClientCvar("cg_thirdperson", "0"); 
-    if(isDefined(self.kc_topbar))
-        self.kc_topbar destroy();
-    if(isDefined(self.kc_bottombar))
-        self.kc_bottombar destroy();
-    if(isDefined(self.kc_title))
-        self.kc_title destroy();
-    if(isDefined(self.kc_timer))
-        self.kc_timer destroy();
+    if(isDefined(self.replay_topbar))
+        self.replay_topbar destroy();
+    if(isDefined(self.replay_bottombar))
+        self.replay_bottombar destroy();
+    if(isDefined(self.replay_title))
+        self.replay_title destroy();
+    if(isDefined(self.replay_timer))
+        self.replay_timer destroy();
 
     self.replay = undefined;
 }
