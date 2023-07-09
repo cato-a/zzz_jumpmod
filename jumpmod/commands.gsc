@@ -91,7 +91,23 @@ init()
     commands(35, level.prefix + "gps"         , ::cmd_gps          , "Toggle current coordinates. [" + level.prefix + "gps]");
     commands(36, level.prefix + "move"        , ::cmd_move         , "Move a player up, down, left, right, forward or backward by specified units. [" + level.prefix + "move <num> <up|down|left|right|forward|backward> <units>]");
     commands(37, level.prefix + "retry"       , ::cmd_retry        , "Respawn player and clear the score, saves, etc.. [" + level.prefix + "retry]");
-    commands(38, level.prefix + "insult"      , ::cmd_insult       , "Insult a player. [" + level.prefix + "insult]");
+    commands(38, level.prefix + "insult"      , ::cmd_insult       , "Insult a player. [" + level.prefix + "insult <num>]");
+    // Cheese commands
+    commands(39, level.prefix + "drop"        , ::cmd_drop         , "Drop a player. [" + level.prefix + "drop <num> <height>]");
+    commands(40, level.prefix + "spank"       , ::cmd_spank        , "Spank a player. [" + level.prefix + "spank <num> <time>]");
+    commands(41, level.prefix + "slap"        , ::cmd_slap         , "Slap a player. [" + level.prefix + "slap <num> <damage>]");
+    commands(42, level.prefix + "blind"       , ::cmd_blind        , "Blind a player. [" + level.prefix + "blind <num> <time>]");
+    commands(43, level.prefix + "runover"     , ::cmd_runover      , "Run over a player. [" + level.prefix + "runover <num>]");
+    commands(44, level.prefix + "squash"      , ::cmd_squash       , "Squash a player. [" + level.prefix + "squash <num>]");
+    commands(45, level.prefix + "rape"        , ::cmd_rape         , "Rape a player. [" + level.prefix + "rape <num>]");
+    commands(46, level.prefix + "toilet"      , ::cmd_toilet       , "Turn player into a toilet. [" + level.prefix + "toilet <num>]");
+    // PowerServer commands
+    commands(47, level.prefix + "explode"     , ::cmd_explode      , "Explode a player. [" + level.prefix + "explode <num>]");
+    commands(48, level.prefix + "mortar"      , ::cmd_mortar       , "Mortar a player. [" + level.prefix + "mortar <num>]");
+    commands(49, level.prefix + "matrix"      , ::cmd_matrix       , "Matrix. [" + level.prefix + "matrix]");
+    commands(50, level.prefix + "burn"        , ::cmd_burn         , "Burn a player. [" + level.prefix + "burn <num>]");
+    commands(51, level.prefix + "cow"         , ::cmd_cow          , "BBQ a player. [" + level.prefix + "cow <num>]");
+    commands(52, level.prefix + "disarm"      , ::cmd_disarm       , "Disarm a player. [" + level.prefix + "disarm <num>]");
 
     level.voteinprogress = getTime(); // !vote command
     thread _loadBans(); // reload bans from dat file every round
@@ -99,6 +115,26 @@ init()
 
 precache()
 {
+    /* PowerServer & Cheese commands */
+    precacheShellshock("default");
+    precacheShellshock("groggy");
+    precacheModel("xmodel/vehicle_tank_tiger");
+    precacheModel("xmodel/vehicle_russian_barge");
+    precacheModel("xmodel/playerbody_russian_conscript");
+    precacheModel("xmodel/toilet");
+    precacheModel("xmodel/cow_dead");
+    precacheModel("xmodel/cow_standing");
+
+    level._effect["fireheavysmoke"]	= loadfx("fx/fire/fireheavysmoke.efx");
+    level._effect["flameout"] = loadfx("fx/tagged/flameout.efx");
+    level._effect["bombexplosion"] = loadfx("fx/explosions/pathfinder_explosion.efx");
+    level._effect["mortar_explosion"][0] = loadfx("fx/impacts/newimps/minefield.efx");
+    level._effect["mortar_explosion"][3] = loadfx("fx/impacts/newimps/minefield.efx");
+    level._effect["mortar_explosion"][2] = loadfx("fx/impacts/dirthit_mortar.efx");
+    level._effect["mortar_explosion"][1] = loadfx("fx/impacts/newimps/blast_gen3.efx");
+    level._effect["mortar_explosion"][4] = loadfx("fx/impacts/newimps/dirthit_mortar2daymarked.efx");
+
+    /* Jumpmod */
     precacheString(&"Yes");
     precacheString(&"No");
     precacheString(&"Use command");
@@ -1138,6 +1174,7 @@ cmd_weapon(args) // without the _mp at end of filename
     weapontypes = jumpmod\functions::strTok(weapontypes, " ");
 
     if(isAlive(player)) { // requested by hehu
+        player endon("spawned");
         player endon("disconnect");
         for(i = 0; i < weapontypes.size; i++) {
             if(!isAlive(player))
@@ -1860,7 +1897,6 @@ cmd_teleport(args)
 
         self endon("spawned");
         self endon("disconnect");
-
         toplayerorigin = player2.origin;
         for(i = 0; i < 360; i += 36) {
             angle = (0, i, 0);
@@ -2693,4 +2729,714 @@ cmd_insult(args)
 
     iPrintLnBold(jumpmod\functions::namefix(player.name) + level.insults[level.insultcount]);
     level.insultcount++;
+}
+
+/* Cheese commands */
+
+cmd_drop(args)
+{
+    if(args.size < 2 || args.size > 3) {
+        message_player("^1ERROR: ^7Invalid number of arguments.");
+        return;
+    }
+
+    args1 = args[1]; // num | string
+    if(!isDefined(args1)) {
+        message_player("^1ERROR: ^7Invalid argument.");
+        return;
+    }
+
+    if(jumpmod\functions::validate_number(args1)) {
+        player = jumpmod\functions::playerByNum(args1);
+        if(!isDefined(player)) {
+            message_player("^1ERROR: ^7No such player.");
+            return;
+        }
+    } else {
+        player = playerByName(args1);
+        if(!isDefined(player)) return;
+    }
+
+    height = 512;
+    if(args.size == 3)
+        if(jumpmod\functions::validate_number(args[2]))
+            height = (int)args[2];
+
+    if(isAlive(player)) {
+        player endon("spawned");
+        player endon("disconnect");
+        player.drop = spawn("script_origin", player.origin);
+        player linkto(player.drop);
+
+        player.drop movez(height, 2);
+        wait 2;
+        player unlink();
+        player.drop delete();
+
+        iPrintLn(jumpmod\functions::namefix(player.name) + " ^7was dropped.");
+    } else
+        message_player("^1ERROR: ^7Player must be alive.");
+}
+
+cmd_spank(args)
+{
+    if(args.size < 2 || args.size > 3) {
+        message_player("^1ERROR: ^7Invalid number of arguments.");
+        return;
+    }
+
+    args1 = args[1]; // num | string
+    if(!isDefined(args1)) {
+        message_player("^1ERROR: ^7Invalid argument.");
+        return;
+    }
+
+    if(jumpmod\functions::validate_number(args1)) {
+        player = jumpmod\functions::playerByNum(args1);
+        if(!isDefined(player)) {
+            message_player("^1ERROR: ^7No such player.");
+            return;
+        }
+    } else {
+        player = playerByName(args1);
+        if(!isDefined(player)) return;
+    }
+
+    time = 15;
+    if(args.size == 3)
+        if(jumpmod\functions::validate_number(args[2]))
+            time = (int)args[2];
+
+    if(isAlive(player)) {
+        player endon("spawned");
+        player endon("disconnect");
+
+        iPrintLn(jumpmod\functions::namefix(player.name) + " ^7is getting spanked.");
+
+        player shellshock("default", time / 2);
+
+        for(i = 0; i < time; i++) {
+            player playSound("melee_hit");
+            player setClientCvar("cl_stance", 2);
+            wait randomFloat(0.5);
+        }
+
+        player shellshock("default", 1);
+    } else
+        message_player("^1ERROR: ^7Player must be alive.");
+}
+
+cmd_slap(args)
+{
+    if(args.size < 2 || args.size > 3) {
+        message_player("^1ERROR: ^7Invalid number of arguments.");
+        return;
+    }
+
+    args1 = args[1]; // num | string
+    if(!isDefined(args1)) {
+        message_player("^1ERROR: ^7Invalid argument.");
+        return;
+    }
+
+    if(jumpmod\functions::validate_number(args1)) {
+        player = jumpmod\functions::playerByNum(args1);
+        if(!isDefined(player)) {
+            message_player("^1ERROR: ^7No such player.");
+            return;
+        }
+    } else {
+        player = playerByName(args1);
+        if(!isDefined(player)) return;
+    }
+
+    dmg = 10;
+    if(args.size == 3)
+        if(jumpmod\functions::validate_number(args[2]))
+            dmg = (int)args[2];
+
+    if(isAlive(player)) {
+        player endon("spawned");
+        player endon("disconnect");
+
+        iPrintLn(jumpmod\functions::namefix(player.name) + " ^7is getting slapped.");
+
+        eInflictor = player;
+        eAttacker = player;
+        iDamage = dmg;
+        iDFlags = 0;
+        sMeansOfDeath = "MOD_PROJECTILE";
+        sWeapon = "panzerfaust_mp";
+        vPoint = player.origin + (0, 0, -1);
+        vDir = vectorNormalize( player.origin - vPoint );
+        sHitLoc = "none";
+        psOffsetTime = 0;
+
+        player playSound("melee_hit");
+        player finishPlayerDamage(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc, psOffsetTime);
+    } else
+        message_player("^1ERROR: ^7Player must be alive.");
+}
+
+cmd_blind(args)
+{
+    if(args.size < 2 || args.size > 3) {
+        message_player("^1ERROR: ^7Invalid number of arguments.");
+        return;
+    }
+
+    args1 = args[1]; // num | string
+    if(!isDefined(args1)) {
+        message_player("^1ERROR: ^7Invalid argument.");
+        return;
+    }
+
+    if(jumpmod\functions::validate_number(args1)) {
+        player = jumpmod\functions::playerByNum(args1);
+        if(!isDefined(player)) {
+            message_player("^1ERROR: ^7No such player.");
+            return;
+        }
+    } else {
+        player = playerByName(args1);
+        if(!isDefined(player)) return;
+    }
+
+    time = 15;
+    if(args.size == 3)
+        if(jumpmod\functions::validate_number(args[2]))
+            time = (int)args[2];
+
+    player endon("spawned");
+    player endon("disconnect");
+
+    iPrintLn(jumpmod\functions::namefix(player.name) + " ^7was blinded for " + time + " seconds.");
+    half = time / 2;
+
+    player shellshock("default", time);
+    player.blindscreen = newClientHudElem(player);
+    player.blindscreen.x = 0;
+    player.blindscreen.y = 0;
+    player.blindscreen.alpha = 1;
+    player.blindscreen setShader("white", 640, 480);
+    wait half;
+    player.blindscreen fadeOverTime(half);
+    player.blindscreen.alpha = 0;
+    wait half;
+    player.blindscreen destroy();
+}
+
+cmd_runover(args)
+{
+    if(args.size != 2) {
+        message_player("^1ERROR: ^7Invalid number of arguments.");
+        return;
+    }
+
+    args1 = args[1]; // num | string
+    if(!isDefined(args1)) {
+        message_player("^1ERROR: ^7Invalid argument.");
+        return;
+    }
+
+    if(jumpmod\functions::validate_number(args1)) {
+        player = jumpmod\functions::playerByNum(args1);
+        if(!isDefined(player)) {
+            message_player("^1ERROR: ^7No such player.");
+            return;
+        }
+    } else {
+        player = playerByName(args1);
+        if(!isDefined(player)) return;
+    }
+
+    if(isAlive(player)) {
+        player endon("spawned");
+        player endon("disconnect");
+
+        lol = spawn("script_origin", player getOrigin());
+        player linkto(lol);
+        tank = spawn("script_model", player getOrigin() + (-512, 0, -256));
+        tank setmodel("xmodel/vehicle_tank_tiger");
+        angles = vectortoangles(player getOrigin() - (tank.origin + (0, 0, 256 )));
+        tank.angles = angles;
+        tank playloopsound("Tank_stone_breakthrough"); // alternative sound as above doesn't play, verified by AJ
+        tank movez(256, 1);
+        wait 1;
+        tank movex(1024, 5);
+        wait 1.8;
+        iPrintLn(jumpmod\functions::namefix(player.name) + " ^7was run over by a tank.");
+        player suicide();
+        wait 3.2;
+        tank movez(-256, 1);
+        wait 1;
+        tank stoploopsound();
+        tank delete();
+        lol delete();
+    } else
+        message_player("^1ERROR: ^7Player must be alive.");
+}
+
+cmd_squash(args)
+{
+    if(args.size != 2) {
+        message_player("^1ERROR: ^7Invalid number of arguments.");
+        return;
+    }
+
+    args1 = args[1]; // num | string
+    if(!isDefined(args1)) {
+        message_player("^1ERROR: ^7Invalid argument.");
+        return;
+    }
+
+    if(jumpmod\functions::validate_number(args1)) {
+        player = jumpmod\functions::playerByNum(args1);
+        if(!isDefined(player)) {
+            message_player("^1ERROR: ^7No such player.");
+            return;
+        }
+    } else {
+        player = playerByName(args1);
+        if(!isDefined(player)) return;
+    }
+
+    if(isAlive(player)) {
+        player endon("spawned");
+        player endon("disconnect");
+
+        lol = spawn("script_model", player getOrigin());
+        player linkto(lol);
+        thing = spawn("script_model", player getOrigin() + (0, 0, 1024));
+        thing setmodel("xmodel/vehicle_russian_barge");
+        thing movez(-1024, 2);
+        wait 2;
+        iPrintLn(jumpmod\functions::namefix(player.name) + " ^7was squashed with a russian barge!");
+        player suicide();
+        thing movez(-512, 5);
+        wait 5;
+        thing delete();
+        lol delete();
+    } else
+        message_player("^1ERROR: ^7Player must be alive.");
+}
+
+cmd_rape(args)
+{
+    if(args.size != 2) {
+        message_player("^1ERROR: ^7Invalid number of arguments.");
+        return;
+    }
+
+    args1 = args[1]; // num | string
+    if(!isDefined(args1)) {
+        message_player("^1ERROR: ^7Invalid argument.");
+        return;
+    }
+
+    if(jumpmod\functions::validate_number(args1)) {
+        player = jumpmod\functions::playerByNum(args1);
+        if(!isDefined(player)) {
+            message_player("^1ERROR: ^7No such player.");
+            return;
+        }
+    } else {
+        player = playerByName(args1);
+        if(!isDefined(player)) return;
+    }
+
+    if(isAlive(player)) {
+        dumas = spawn("script_model", (0, 0, 0));
+        dumas setmodel("xmodel/playerbody_russian_conscript");
+
+        player thread forceprone();
+
+        iPrintLnBold(jumpmod\functions::namefix(player.name) + "^3 is getting raped by dumas!");
+
+        player endon("spawned");
+        player endon("disconnect");
+        while(isAlive(player)) {
+            tracedir = anglestoforward(player getPlayerAngles());
+            traceend = player.origin;
+            traceend += jumpmod\functions::vectorScale(tracedir, -56);
+            trace = bullettrace(player.origin, traceend, false, player);
+            pos = trace["position"];
+
+            dumas.origin = pos;
+            dumas.angles = (45, player.angles[1], player.angles[2]);
+
+            rapedir = dumas.origin - player.origin;
+
+            dumas moveto(player.origin, 0.5);
+            wait 0.3;
+            dumas moveto(pos, 0.25);
+            wait 0.25;
+            player finishplayerdamage(player, player, 20, 0, "MOD_PROJECTILE", "panzerfaust_mp", dumas.origin, vectornormalize(dumas.origin - player.origin), "none");
+        }
+
+        dumas delete();
+    } else
+        message_player("^1ERROR: ^7Player must be alive.");
+}
+
+forceprone(args) {
+    self endon("spawned");
+    self endon("disconnect");
+
+    while(isAlive(self)) {
+        self setClientCvar("cl_stance", 2);
+        wait 0.05;
+    }
+}
+
+cmd_toilet(args)
+{
+    if(args.size < 2 || args.size > 3) {
+        message_player("^1ERROR: ^7Invalid number of arguments.");
+        return;
+    }
+
+    args1 = args[1]; // num | string
+    if(!isDefined(args1)) {
+        message_player("^1ERROR: ^7Invalid argument.");
+        return;
+    }
+
+    if(jumpmod\functions::validate_number(args1)) {
+        player = jumpmod\functions::playerByNum(args1);
+        if(!isDefined(player)) {
+            message_player("^1ERROR: ^7No such player.");
+            return;
+        }
+    } else {
+        player = playerByName(args1);
+        if(!isDefined(player)) return;
+    }
+
+    time = 15;
+    if(args.size == 3)
+        if(jumpmod\functions::validate_number(args[2]))
+            time = (int)args[2];
+
+    if(isAlive(player)) {
+        player endon("spawned");
+        player endon("disconnect");
+
+        player detachall();
+        player takeAllWeapons();
+        player setmodel("xmodel/toilet");
+
+        iPrintLn(jumpmod\functions::namefix(player.name) + " ^7was turned into a toilet.");
+
+        player setClientCvar("cg_thirdperson", "1");
+
+        wait time;
+
+        player setClientCvar("cg_thirdperson", "0");
+        player suicide();
+    } else
+        message_player("^1ERROR: ^7Player must be alive.");
+}
+
+/* PowerServer commands */
+
+cmd_explode(args)
+{
+    if(args.size != 2) {
+        message_player("^1ERROR: ^7Invalid number of arguments.");
+        return;
+    }
+
+    args1 = args[1]; // num | string
+    if(!isDefined(args1)) {
+        message_player("^1ERROR: ^7Invalid argument.");
+        return;
+    }
+
+    if(jumpmod\functions::validate_number(args1)) {
+        player = jumpmod\functions::playerByNum(args1);
+        if(!isDefined(player)) {
+            message_player("^1ERROR: ^7No such player.");
+            return;
+        }
+    } else {
+        player = playerByName(args1);
+        if(!isDefined(player)) return;
+    }
+
+    if(isAlive(player)) {
+        playfx(level._effect["bombexplosion"], player.origin);
+        player suicide();
+        iPrintLn(jumpmod\functions::namefix(player.name) + " ^7got a blowjob!");
+    } else
+        message_player("^1ERROR: ^7Player must be alive.");
+}
+
+cmd_mortar(args)
+{
+    if(args.size != 2) {
+        message_player("^1ERROR: ^7Invalid number of arguments.");
+        return;
+    }
+
+    args1 = args[1]; // num | string
+    if(!isDefined(args1)) {
+        message_player("^1ERROR: ^7Invalid argument.");
+        return;
+    }
+
+    if(jumpmod\functions::validate_number(args1)) {
+        player = jumpmod\functions::playerByNum(args1);
+        if(!isDefined(player)) {
+            message_player("^1ERROR: ^7No such player.");
+            return;
+        }
+    } else {
+        player = playerByName(args1);
+        if(!isDefined(player)) return;
+    }
+
+    if(isAlive(player)) {
+        message_player("^5INFO: ^7Dropping deadly mortars on player " + jumpmod\functions::namefix(player.name) + "^7.");
+        player endon("spawned");
+        player endon("disconnect");
+
+        player playsound("generic_undersuppression_foley");
+        player iPrintLn("INCOMING!!!");
+        player thread jumpmod\functions::playSoundAtLocation("mortar_incoming", player.origin, 1);
+
+        wait 1.5;
+
+        while(player.sessionstate == "playing") {
+            wait 0.5;
+
+            playfx(level._effect["mortar_explosion"][randomInt(3)], player.origin);
+            radiusDamage(player.origin, 200, 10, 10);
+            thread jumpmod\functions::playSoundAtLocation("mortar_explosion", player.origin, .1);
+            earthquake(0.3, 3, player.origin, 850);
+        }
+    } else
+        message_player("^1ERROR: ^7Player must be alive.");
+}
+
+cmd_matrix(args)
+{
+    if(args.size != 1) {
+        message_player("^1ERROR: ^7Invalid number of arguments.");
+        return;
+    }
+
+    matrixmsg = [];
+    matrixmsg[matrixmsg.size] = "You think that's air you're breathing?";
+    matrixmsg[matrixmsg.size] = "Dodge this";
+    matrixmsg[matrixmsg.size] = "Only human";
+    matrixmsg[matrixmsg.size] = "There is no spoon";
+    matrixmsg[matrixmsg.size] = "Wake up Neo";
+    matrixmsg[matrixmsg.size] = "The Matrix has you";
+    matrixmsg[matrixmsg.size] = "Follow the white rabbit";
+
+    iPrintLnBold(matrixmsg[randomInt(matrixmsg.size)]);
+
+    wait 2;
+
+    players = getEntArray("player", "classname");
+
+    for(i = 0; i < players.size; i++)
+        players[i] shellshock("groggy", 6);
+
+    setCvar("timescale", "0.5");
+    setCvar("g_gravity", "50");
+
+    wait 5;
+    for(x = 0.5; x < 1; x = x + 0.05) {
+        wait (0.1 / x);
+        setCvar("timescale", x);
+    }
+
+    setCvar("timescale", "1");
+    setCvar("g_gravity", "800");
+
+    wait 0.05;
+    for(i = 0; i < players.size; i++)
+        if(isDefined(players[i].pers["mm_fov"]))
+            players[i] setClientCvar("cg_fov", players[i].pers["mm_fov"]);
+}
+
+cmd_burn(args)
+{
+    if(args.size != 2) {
+        message_player("^1ERROR: ^7Invalid number of arguments.");
+        return;
+    }
+
+    args1 = args[1]; // num | string
+    if(!isDefined(args1)) {
+        message_player("^1ERROR: ^7Invalid argument.");
+        return;
+    }
+
+    if(jumpmod\functions::validate_number(args1)) {
+        player = jumpmod\functions::playerByNum(args1);
+        if(!isDefined(player)) {
+            message_player("^1ERROR: ^7No such player.");
+            return;
+        }
+    } else {
+        player = playerByName(args1);
+        if(!isDefined(player)) return;
+    }
+
+    if(isAlive(player)) {
+        message_player("^5INFO: ^7Player " + jumpmod\functions::namefix(player.name) + " ^7is burned alive!");
+        player endon("spawned");
+        player endon("disconnect");
+
+        burnTime = 10;
+        startTime = getTime() + (burnTime * 1000);
+
+        while(1) {
+            playfx(level._effect["fireheavysmoke"], player.origin);
+
+            if(startTime < getTime()) {
+                playfx(level._effect["flameout"], player.origin);
+                player suicide();
+                player playsound("generic_death_russian_4");
+                break;
+            }
+
+            wait 0.1;
+        }
+    } else
+        message_player("^1ERROR: ^7Player must be alive.");
+}
+
+cmd_cow(args)
+{
+    if(args.size != 2) {
+        message_player("^1ERROR: ^7Invalid number of arguments.");
+        return;
+    }
+
+    args1 = args[1]; // num | string
+    if(!isDefined(args1)) {
+        message_player("^1ERROR: ^7Invalid argument.");
+        return;
+    }
+
+    if(jumpmod\functions::validate_number(args1)) {
+        player = jumpmod\functions::playerByNum(args1);
+        if(!isDefined(player)) {
+            message_player("^1ERROR: ^7No such player.");
+            return;
+        }
+    } else {
+        player = playerByName(args1);
+        if(!isDefined(player)) return;
+    }
+
+    if(isAlive(player)) {
+        player endon("spawned");
+        player endon("disconnect");
+
+        iPrintLnBold(jumpmod\functions::namefix(player.name) + " ^7has been turned into BBQ'd beef!");
+        player setmodel("xmodel/cow_standing");
+        player.health = 100;
+        player thread cmd_cow_extra("burn");
+        player thread cmd_cow_extra();
+        wait 0.1;
+        player notify("remove_body");
+        wait 9.5;
+        player setmodel("xmodel/cow_dead");
+    } else
+        message_player("^1ERROR: ^7Player must be alive.");
+}
+
+cmd_cow_extra(arg) // lazy to fix
+{
+    if(isDefined(arg) && arg == "burn") {
+        self endon("spawned");
+
+        burnTime = 10;
+        startTime = getTime() + (burnTime * 1000);
+
+        while(1) {
+            playfx(level._effect["fireheavysmoke"], self.origin);
+
+            if(startTime < getTime()) {
+                playfx(level._effect["flameout"], self.origin);
+                self suicide();
+                self playsound("generic_death_russian_4");
+                break;
+            }
+
+            wait 0.1;
+        }
+    } else {
+        grenade = self getWeaponSlotWeapon("grenade");
+        pistol = self getWeaponSlotWeapon("pistol");
+        primary = self getWeaponSlotWeapon("primary");
+        primaryb = self getWeaponSlotWeapon("primaryb");
+
+        if(!isDefined(grenade))
+            grenade = "none";
+        if(!isDefined(pistol))
+            pistol = "none";
+        if(!isDefined(primary))
+            primary = "none";
+        if(!isDefined(primaryb))
+            primary = "none";
+
+        self dropItem(grenade);
+        self dropItem(pistol);
+        self dropItem(primary);
+        self dropItem(primaryb);
+    }
+}
+
+cmd_disarm(args)
+{
+    if(args.size != 2) {
+        message_player("^1ERROR: ^7Invalid number of arguments.");
+        return;
+    }
+
+    args1 = args[1]; // num | string
+    if(!isDefined(args1)) {
+        message_player("^1ERROR: ^7Invalid argument.");
+        return;
+    }
+
+    if(jumpmod\functions::validate_number(args1)) {
+        player = jumpmod\functions::playerByNum(args1);
+        if(!isDefined(player)) {
+            message_player("^1ERROR: ^7No such player.");
+            return;
+        }
+    } else {
+        player = playerByName(args1);
+        if(!isDefined(player)) return;
+    }
+
+    if(isAlive(player)) {
+        message_player("^5INFO: ^7Disarmed player " + jumpmod\functions::namefix(player.name) + "^7.");
+        grenade = player getWeaponSlotWeapon("grenade");
+        pistol = player getWeaponSlotWeapon("pistol");
+        primary = player getWeaponSlotWeapon("primary");
+        primaryb = player getWeaponSlotWeapon("primaryb");
+
+        if(!isDefined(grenade))
+            grenade = "none";
+        if(!isDefined(pistol))
+            pistol = "none";
+        if(!isDefined(primary))
+            primary = "none";
+        if(!isDefined(primaryb))
+            primary = "none";
+
+        player dropItem(grenade);
+        player dropItem(pistol);
+        player dropItem(primary);
+        player dropItem(primaryb);
+    } else
+        message_player("^1ERROR: ^7Player must be alive.");
 }
