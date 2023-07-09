@@ -1773,7 +1773,7 @@ cmd_scvar(args)
         cval = jumpmod\functions::namefix(args[2]);
 
         setCvar(cvar, cval);
-        message_player("^5INFO: ^7Server " + cvar + " set with value " + cval + ".");
+        message_player("^5INFO: ^7Server CVAR " + cvar + " set with value " + cval + ".");
     } else
         message_player("^1ERROR: ^7This CVAR is not allowed to change.");
 }
@@ -2655,7 +2655,7 @@ cmd_retry(args)
 
 cmd_retry_clear(origin, angles) // not a cmd
 {
-    message_player("^5INFO: ^7Score, deaths and saves cleared.");
+    message_player("^5INFO: ^7Score, deaths, health and saves cleared.");
 
     self.score = 0;
     self.deaths = 0;
@@ -2664,12 +2664,15 @@ cmd_retry_clear(origin, angles) // not a cmd
         self.save_array = [];
 
     if(isAlive(self) && self.sessionstate == "playing") {
+        self.nodamage = true;
         self setPlayerAngles(angles);
         self setOrigin(origin);
 
         self takeAllWeapons();
         wait 0;
         self maps\MP\gametypes\jmp::jmpWeapons(); // TODO: improve
+        self.nodamage = false;
+        self.health = self.maxhealth;
     }
 }
 

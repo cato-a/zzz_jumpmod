@@ -184,6 +184,7 @@ Callback_PlayerConnect()
 
     iPrintLn(jumpmod\functions::namefix(self.name) + " ^7Connected");
     self.blocking = false;
+    self.nodamage = false;
     self.save_array = []; // Declare jumpsave array
     self.save_array_max_length = 22;
     self.load_index = 0;
@@ -316,7 +317,7 @@ Callback_PlayerDisconnect()
 
 Callback_PlayerDamage(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc)
 {
-    if(self.sessionteam == "spectator")
+    if(self.sessionteam == "spectator" || self.nodamage)
         return;
 
     if(level.bounceon && sMeansOfDeath == "MOD_FALLING")
