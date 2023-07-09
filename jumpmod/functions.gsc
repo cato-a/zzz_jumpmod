@@ -413,3 +413,21 @@ aAn(word, upper)
         return "A";
     return "a";
 }
+
+vectorScale(vec, scale)
+{
+    vec = (vec[0] * scale, vec[1] * scale, vec[2] * scale);
+    return vec;
+}
+
+// Spawn an object and attach a sound to it, POWERSERVER
+PlaySoundAtLocation(sound, location, iTime)
+{
+    org = spawn("script_model", location);
+    wait 0.05;
+    org show();
+    org playSound(sound);
+    wait iTime;
+    org delete();
+    return;
+}
