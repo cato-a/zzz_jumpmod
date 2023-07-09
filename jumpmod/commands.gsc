@@ -515,7 +515,7 @@ cmd_help(args)
     perms = level.perms["default"];
     if(isloggedin) {
         cmdgroup = self.pers["mm_group"];
-        perms = codam\_mm_mmm::array_join(perms, level.perms[cmdgroup]);
+        perms = jumpmod\functions::array_join(perms, level.perms[cmdgroup]);
     }
 
     for(i = 0; i < level.help.size; i++) {
@@ -2639,6 +2639,7 @@ cmd_retry_clear(origin, angles) // not a cmd
 cmd_insult(args)
 {
     if(!isDefined(level.insults) || level.insultcount >= level.insults.size - 1) {
+        level.insultcount = 0;
         insults[0]  = "^1's mom is like a hardware store... 10 cents a screw.";
         insults[1]  = "^1. I'd like to see things from your point of view but I can't seem to get my head that far up my ass.";
         insults[2]  = "^1's mom is so poor, she once fought a blind squirrel for a peanut.";
@@ -2669,12 +2670,10 @@ cmd_insult(args)
         insults[27] = "^1. Ever since I saw you in your family tree, I've wanted to cut it down.";
         insults[28] = "^1, your village just called. They're missing an idiot.";
         insults[29] = "^1, I can't think of an insult stupid enough for you.";
-
-        level.insults = jumpmod\functions::array_shuffle(insults)
-        level.insultcount = 0;
+        level.insults = jumpmod\functions::array_shuffle(insults);
     }
 
-    if(args.size < 2) {
+    if(args.size != 2) {
         message_player("^1ERROR: ^7Invalid number of arguments.");
         return;
     }
