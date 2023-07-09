@@ -591,7 +591,7 @@ cmd_version(args)
         return;
     }
 
-    message_player("This server is running jumpmod v1.8 with MiscMod-stripped.");
+    message_player("This server is running jumpmod v1.9 with MiscMod-stripped.");
 }
 
 cmd_name(args)
