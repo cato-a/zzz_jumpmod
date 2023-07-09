@@ -188,7 +188,7 @@ Callback_PlayerConnect()
     self.blocking = false;
     self.nodamage = false;
     self.save_array = []; // Declare jumpsave array
-    self.save_array_max_length = 22;
+    self.save_array_max_length = 52;
     self.load_index = 0;
 
     self.pers["mm_chattimer"] = getTime();
@@ -382,39 +382,39 @@ jmpAntiblock()
     }
 }
 
-jmpMeleeKey()
-{
-    self endon("spawned");
+// jmpMeleeKey()
+// {
+//     self endon("spawned");
 
-    for(;;) {
-        if(self meleeButtonPressed()) {
-            catch_next = false;
+//     for(;;) {
+//         if(self meleeButtonPressed()) {
+//             catch_next = false;
 
-            for(i = 0; i <= 0.30; i += 0.01) {
-                if(catch_next && self meleeButtonPressed()) {
-                    while(!(self isOnGround())) {
-                        if(self jumpmod\functions::isOnLadder())
-                            break;
+//             for(i = 0; i <= 0.30; i += 0.01) {
+//                 if(catch_next && self meleeButtonPressed()) {
+//                     while(!(self isOnGround())) {
+//                         if(self jumpmod\functions::isOnLadder())
+//                             break;
 
-                        wait 0.05;
-                    }
+//                         wait 0.05;
+//                     }
 
-                    if(self isOnGround() || self jumpmod\functions::isOnLadder()) {
-                        self thread jmpSavePosition();
-                        wait 0.25;
-                        break;
-                    }
-                }
-                else if(!self meleeButtonPressed())
-                    catch_next = true;
+//                     if(self isOnGround() || self jumpmod\functions::isOnLadder()) {
+//                         self thread jmpSavePosition();
+//                         wait 0.25;
+//                         break;
+//                     }
+//                 }
+//                 else if(!self meleeButtonPressed())
+//                     catch_next = true;
 
-                wait 0.01;
-            }
-        }
+//                 wait 0.01;
+//             }
+//         }
 
-        wait 0.05;
-    }
-}
+//         wait 0.05;
+//     }
+// }
 
 jmpSavePosition()
 {
@@ -442,30 +442,30 @@ jmpSavePosition()
     self iPrintLn("^1(^7X: ^2" + (int)self.origin[0] + "^7 Y: ^2" + (int)self.origin[1] + "^7 Z: ^2" + (int)self.origin[2] + "^1)");
 }
 
-jmpUseKey()
-{
-    self endon("spawned");
+// jmpUseKey()
+// {
+//     self endon("spawned");
 
-    for(;;) {
-        if(self useButtonPressed()) {
-            catch_next = false;
+//     for(;;) {
+//         if(self useButtonPressed()) {
+//             catch_next = false;
 
-            for(i = 0; i <= 0.30; i += 0.01) {
-                if(catch_next && self useButtonPressed()) {
-                    self thread jmpLoadPosition();
-                    wait 0.25;
-                    break;
-                }
-                else if(!self useButtonPressed())
-                    catch_next = true;
+//             for(i = 0; i <= 0.30; i += 0.01) {
+//                 if(catch_next && self useButtonPressed()) {
+//                     self thread jmpLoadPosition();
+//                     wait 0.25;
+//                     break;
+//                 }
+//                 else if(!self useButtonPressed())
+//                     catch_next = true;
 
-                wait 0.01;
-            }
-        }
+//                 wait 0.01;
+//             }
+//         }
 
-        wait 0.05;
-    }
-}
+//         wait 0.05;
+//     }
+// }
 
 jmpLoadPosition()
 {
@@ -691,8 +691,9 @@ spawnPlayer()
     else
         maps\mp\_utility::loadModel(self.pers["savedmodel"]);
 
-    self thread jmpMeleeKey();
-    self thread jmpUseKey();
+    // self thread jmpMeleeKey();
+    // self thread jmpUseKey();
+    self thread mmKeys();
     self thread jmpAntiblock();
     self thread jmpWeapons();
 
@@ -1915,3 +1916,66 @@ mapdifficulty(mapname)
 // 	self.health = orghealth;
 // 	self.preventingdeath = undefined;
 // }
+
+mmKeys()
+{ // u = useKey, m = meleeKey and a = attackKey
+    keys = "";
+    timer = 0;
+
+    for(;;) {
+        wait 0.05;
+        if(self.sessionstate != "playing")
+            continue;
+
+        if(self useButtonPressed()) {
+            while(self useButtonPressed())
+                wait 0.05;
+
+            keys += "u";
+         }
+
+        if(keys.size > 0 && self attackButtonPressed()) {
+            while(self attackButtonPressed())
+                wait 0.05;
+
+            keys += "a";
+         }
+
+        if(self meleeButtonPressed()) {
+            while(self meleeButtonPressed())
+                wait 0.05;
+
+            keys += "m";
+         }
+
+        if(keys.size > 0) {
+            timer += 0.05;
+            reset = false;
+            switch(keys) { // add your custom functions here for keycombos :)
+                case "mm":
+                    while(!(self isOnGround())) {
+                        if(self jumpmod\functions::isOnLadder())
+                            break;
+
+                        wait 0.05;
+                    }
+
+                    if(self isOnGround() || self jumpmod\functions::isOnLadder())
+                        self thread jmpSavePosition();
+
+                    reset = true;
+                break;
+                case "uu":
+                    self thread jmpLoadPosition();
+
+                    reset = true;
+                break;
+            }
+
+            if(timer > 1 || reset) {
+                timer = 0;
+                keys = "";
+            }
+        }
+    }
+}
