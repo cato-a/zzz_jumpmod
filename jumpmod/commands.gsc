@@ -32,7 +32,7 @@ init()
     level.reportfile = "miscmod_reports.dat";
 
     if(!isDefined(level.perms["default"]))
-        level.perms["default"] = jumpmod\functions::strTok("0-3:5-6:18:33-35:37:53", ":"); // pff xD
+        level.perms["default"] = jumpmod\functions::strTok("0-3:5-6:18:33-35:37:53-54", ":"); // pff xD
 
     level.prefix = "!";
     if(getCvar("scr_mm_cmd_prefix") != "")
@@ -110,6 +110,7 @@ init()
     commands(52, level.prefix + "disarm"      , ::cmd_disarm       , "Disarm a player. [" + level.prefix + "disarm <num>]");
     // MiscMod commands
     commands(53, level.prefix + "replay"      , ::cmd_replay       , "Replay the last jump. [" + level.prefix + "replay <time>]");
+    commands(54, level.prefix + "showspeed"   , ::cmd_showspeed    , "Show current player/server speed. [" + level.prefix + "showspeed]");
 
     level.voteinprogress = getTime(); // !vote command
     thread _loadBans(); // reload bans from dat file every round
@@ -3487,7 +3488,7 @@ cmd_replay(args)
             self.replay_topbar.y = 0;
             self.replay_topbar.alpha = 0.5;
             self.replay_topbar setShader("white", 640, 112);
-            self.replay_topbar.color = (0.47, 0.73, 0.24);
+            self.replay_topbar.color = (0.79216, 0.60784, 0.96863); // baby purple
         }
 
         if(!isDefined(self.replay_bottombar)) {
@@ -3497,7 +3498,7 @@ cmd_replay(args)
             self.replay_bottombar.y = 368;
             self.replay_bottombar.alpha = 0.5;
             self.replay_bottombar setShader("white", 640, 112);
-            self.replay_bottombar.color = (0.47, 0.73, 0.24);
+            self.replay_bottombar.color = (0.79216, 0.60784, 0.96863); // baby purple
         }
 
         if(!isDefined(self.replay_title)) {
@@ -3509,7 +3510,7 @@ cmd_replay(args)
             self.replay_title.alignY = "middle";
             self.replay_title.sort = 1; // force to draw after the bars
             self.replay_title.fontScale = 3.5;
-            self.replay_title.color = (0.97, 0.67, 0.16);
+            self.replay_title.color = (0.98039, 0.99608, 0.29412); // banana yellow
             self.replay_title setText(&"REPLAY");
         }
 
@@ -3554,4 +3555,118 @@ cmd_replay_cleanup()
         self.replay_timer destroy();
 
     self.replay = undefined;
+}
+
+cmd_showspeed(args)
+{
+    if(args.size != 1) {
+        message_player("^1ERROR: ^7Invalid number of arguments. (!=1)");
+        return;
+    }
+
+    if(isDefined(self.showspeed)) {
+        self.showspeed = undefined;
+        self notify("endshowspeed");
+        cmd_showspeed_cleanup();
+        message_player("^5INFO: ^7Speed monitor turned off.");
+    } else {
+        self.showspeed = true;
+        self thread cmd_showspeed_run(args[0]);
+    }
+}
+
+cmd_showspeed_run(cmd) // not a command :P
+{ // Thanks Cheese for the !showspeed command and calculations
+    self endon("endshowspeed");
+    message_player("^5INFO: ^7Speed monitor turned on. Use " + cmd + " again to turn off.");
+    if(self.sessionstate != "playing")
+        message_player("^5INFO: ^7The speed monitor will be visible when you are alive.");
+
+    x = 480;
+    y = 30;
+    while(true) {
+        while(self.sessionstate != "playing")
+            wait 0.5;
+    
+        self.speedhudx = newClientHudElem(self);
+        self.speedhudx.x = x;
+        self.speedhudx.y = y;
+        self.speedhudx.alignX = "right";
+        self.speedhudx.alignY = "middle";
+        self.speedhudx.sort = 10000;
+        self.speedhudx.archived = true;
+        self.speedhudx setText(&"Speed (max):");
+        self.speedhudx.color = (1, 0.2, 0);
+
+        self.speedhudxval = newClientHudElem(self);
+        self.speedhudxval.x = x + 5;
+        self.speedhudxval.y = y;
+        self.speedhudxval.alignX = "left";
+        self.speedhudxval.alignY = "middle";
+        self.speedhudxval.sort = 10000;
+        self.speedhudxval.archived = true;
+        self.speedhudxval setValue(0);
+        self.speedhudxval.color = (1, 0.7, 0);
+
+        self.speedhudy = newClientHudElem(self);
+        self.speedhudy.x = x;
+        self.speedhudy.y = y + 12;
+        self.speedhudy.alignX = "right";
+        self.speedhudy.alignY = "middle";
+        self.speedhudy.sort = 10000;
+        self.speedhudy.archived = true;
+        self.speedhudy setText(&"Speed (2/f):");
+        self.speedhudy.color = (1, 0.2, 0);
+
+        self.speedhudyval = newClientHudElem(self);
+        self.speedhudyval.x = x + 5;
+        self.speedhudyval.y = y + 12;
+        self.speedhudyval.alignX = "left";
+        self.speedhudyval.alignY = "middle";
+        self.speedhudyval.sort = 10000;
+        self.speedhudyval.archived = true;
+        self.speedhudyval setValue(0);
+        self.speedhudyval.color = (1, 0.7, 0);
+
+        // average speed over the last second
+        average = [];
+        for(i = 0; i < level.averageframes; i++)
+            average[i] = 0;
+
+        while(isAlive(self) && self.sessionstate == "playing") {
+            lastPos = self.origin;
+            wait level.frametime;
+
+            for(i = level.averageframes; i > 0; i--)
+                average[i] = average[i - 1];
+
+            average[0] = distance(lastPos, self.origin) / level.frametime ;
+
+            maxSpeed = 0;
+            for(i = 0; i < level.averageframes; i++) {
+                if(average[i] > maxSpeed)
+                    maxSpeed = average[i];
+            }
+
+            if(isDefined(self.speedhudxval))
+                self.speedhudxval setValue((int)(maxSpeed)); // // maximum speed from the last 1 seconds
+            if(isDefined(self.speedhudyval))
+                self.speedhudyval setValue((int)(average[0] + average[1]) / 2); // average speed over 2 frames
+        }
+
+        cmd_showspeed_cleanup();
+    }
+}
+
+cmd_showspeed_cleanup() // not a command :P
+{
+    if(isDefined(self.speedhudx))
+        self.speedhudx destroy();
+    if(isDefined(self.speedhudxval))
+        self.speedhudxval destroy();
+
+    if(isDefined(self.speedhudy))
+        self.speedhudy destroy();
+    if(isDefined(self.speedhudyval))
+        self.speedhudyval destroy();
 }
