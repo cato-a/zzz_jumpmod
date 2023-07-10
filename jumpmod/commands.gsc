@@ -1763,7 +1763,7 @@ cmd_pcvar(args)
 
 cmd_scvar(args)
 {
-    if(args.size != 3) {
+    if(args.size == 1 || args.size > 3) {
         message_player("^1ERROR: ^7Invalid number of arguments.");
         return;
     }
@@ -1774,10 +1774,16 @@ cmd_scvar(args)
 
     cvar = jumpmod\functions::namefix(args[1]);
     if(!jumpmod\functions::in_array(bannedcvars, tolower(cvar))) {
-        cval = jumpmod\functions::namefix(args[2]);
+        if(args.size == 2 || args[2] == "none")
+            cval = "";
+        else
+            cval = jumpmod\functions::namefix(args[2]);
 
         setCvar(cvar, cval);
-        message_player("^5INFO: ^7Server CVAR " + cvar + " set with value " + cval + ".");
+
+        if(cval == "" || cval == "none")
+            cval = "empty";
+        message_player("^5INFO: ^7Server CVAR " + cvar + " set to " + cval + ".");
     } else
         message_player("^1ERROR: ^7This CVAR is not allowed to change.");
 }
@@ -3262,11 +3268,6 @@ cmd_matrix(args)
 
     setCvar("timescale", "1");
     setCvar("g_gravity", "800");
-
-    wait 0.05;
-    for(i = 0; i < players.size; i++)
-        if(isDefined(players[i].pers["mm_fov"]))
-            players[i] setClientCvar("cg_fov", players[i].pers["mm_fov"]);
 }
 
 cmd_burn(args)
