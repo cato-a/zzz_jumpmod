@@ -2434,6 +2434,7 @@ cmd_gps_run(cmd) // not a command :P
         self.gpshudx.alignX = "right";
         self.gpshudx.alignY = "middle";
         self.gpshudx.sort = 10000;
+        self.gpshudx.archived = true;
         self.gpshudx setText(&"X:");
         self.gpshudx.color = (1, 0.2, 0);
 
@@ -2443,6 +2444,7 @@ cmd_gps_run(cmd) // not a command :P
         self.gpshudxval.alignX = "left";
         self.gpshudxval.alignY = "middle";
         self.gpshudxval.sort = 10000;
+        self.gpshudxval.archived = true;
         self.gpshudxval setValue(0);
         self.gpshudxval.color = (1, 0.7, 0);
 
@@ -2452,6 +2454,7 @@ cmd_gps_run(cmd) // not a command :P
         self.gpshudy.alignX = "right";
         self.gpshudy.alignY = "middle";
         self.gpshudy.sort = 10000;
+        self.gpshudy.archived = true;
         self.gpshudy setText(&"Y:");
         self.gpshudy.color = (1, 0.2, 0);
 
@@ -2461,6 +2464,7 @@ cmd_gps_run(cmd) // not a command :P
         self.gpshudyval.alignX = "left";
         self.gpshudyval.alignY = "middle";
         self.gpshudyval.sort = 10000;
+        self.gpshudyval.archived = true;
         self.gpshudyval setValue(0);
         self.gpshudyval.color = (1, 0.7, 0);
 
@@ -2470,6 +2474,7 @@ cmd_gps_run(cmd) // not a command :P
         self.gpshudz.alignX = "right";
         self.gpshudz.alignY = "middle";
         self.gpshudz.sort = 10000;
+        self.gpshudz.archived = true;
         self.gpshudz setText(&"Z:");
         self.gpshudz.fontScale = 1.05; // to match other chars
         self.gpshudz.color = (1, 0.2, 0);
@@ -2480,6 +2485,7 @@ cmd_gps_run(cmd) // not a command :P
         self.gpshudzval.alignX = "left";
         self.gpshudzval.alignY = "middle";
         self.gpshudzval.sort = 10000;
+        self.gpshudzval.archived = true;
         self.gpshudzval setValue(0);
         self.gpshudzval.color = (1, 0.7, 0);
 
@@ -2489,6 +2495,7 @@ cmd_gps_run(cmd) // not a command :P
         self.gpshudangle.alignX = "right";
         self.gpshudangle.alignY = "middle";
         self.gpshudangle.sort = 10000;
+        self.gpshudangle.archived = true;
         self.gpshudangle setText(&"A:");
         self.gpshudangle.color = (1, 0.2, 0);
 
@@ -2498,6 +2505,7 @@ cmd_gps_run(cmd) // not a command :P
         self.gpshudangleval.alignX = "left";
         self.gpshudangleval.alignY = "middle";
         self.gpshudangleval.sort = 10000;
+        self.gpshudangleval.archived = true;
         self.gpshudangleval setValue(0);
         self.gpshudangleval.color = (1, 0.7, 0);
 
@@ -3629,8 +3637,7 @@ cmd_showspeed_run(cmd) // not a command :P
         self.speedhudyval setValue(0);
         self.speedhudyval.color = (1, 0.7, 0);
 
-        // average speed over the last second
-        average = [];
+        average = []; // average speed over the last second
         for(i = 0; i < level.averageframes; i++)
             average[i] = 0;
 
