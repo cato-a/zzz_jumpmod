@@ -625,7 +625,7 @@ mapfixes()
     level endon("end_map");
     healthmodel = "xmodel/health_large";
     precacheModel(healthmodel);
-    grenademodel = "xmodel/crate_misc1"; // "xmodel/crate_misc_red1" / "xmodel/crate_misc_green1" / "xmodel/ammo_stielhandgranate1"
+    grenademodel = "xmodel/ammo_stielhandgranate1"; // "xmodel/crate_misc_red1" / "xmodel/crate_misc_green1" / "xmodel/ammo_stielhandgranate1"
     precacheModel(grenademodel);
     panzerfaustmodel = "xmodel/ammo_panzerfaust_box2";
     precacheModel(panzerfaustmodel);
