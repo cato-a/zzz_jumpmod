@@ -554,9 +554,9 @@ getGametypeName(gt)
     return gtname;
 }
 
-get_map_difficulty(mapname) {
-    return maps\MP\gametypes\jmp::mapdifficulty(mapname);
-}
+// get_map_difficulty(mapname) {
+//     return maps\MP\gametypes\jmp::mapdifficulty(mapname);
+// }
 
 // get_map_difficulty( map ) { // Cheese
 
