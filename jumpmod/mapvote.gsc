@@ -237,8 +237,9 @@ runMapVote()
         level.mapcandidate[i]["mapname"] = randomMapRotation[i]["map"];
         level.mapcandidate[i]["gametype"] = randomMapRotation[i]["gametype"];
         level.mapcandidate[i]["votes"] = 0;
-        if(level.fmgametype == "jmp") // TODO improve
-            level.mapcandidate[i]["difficulty"] = get_map_difficulty( randomMapRotation[ i ][ "map" ] );
+        if(level.fmgametype == "jmp" && isDefined(level.difficulty[randomMapRotation[i]["map"]])) // TODO improve
+            level.mapcandidate[i]["difficulty"] = level.difficulty[randomMapRotation[i]["map"]];
+            //level.mapcandidate[i]["difficulty"] = get_map_difficulty( randomMapRotation[ i ][ "map" ] );
             
         if((level.mapvotereplay || level.mapvoterandom) && i > 2) break;
     }
