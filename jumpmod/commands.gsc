@@ -77,7 +77,7 @@ init()
     commands(21, level.prefix + "weapon"      , ::cmd_weapon       , "Give weapon to player. [" + level.prefix + "weapon <num> <weapon>]");
     commands(22, level.prefix + "heal"        , ::cmd_heal         , "Heal player. [" + level.prefix + "heal <num>]");
     commands(23, level.prefix + "invisible"   , ::cmd_invisible    , "Become invisible. [" + level.prefix + "invisible <on|off>]");
-    commands(24, level.prefix + "ban"         , ::cmd_ban          , "Ban player. [" + level.prefix + "ban <num> <reason>]");
+    commands(24, level.prefix + "ban"         , ::cmd_ban          , "Ban player. [" + level.prefix + "ban <num> <time> <reason>]");
     commands(25, level.prefix + "unban"       , ::cmd_unban        , "Unban player. [" + level.prefix + "unban <ip>]");
     commands(26, level.prefix + "report"      , ::cmd_report       , "Report a player. [" + level.prefix + "report <num> <reason>]");
     commands(27, level.prefix + "who"         , ::cmd_who          , "Display logged in users. [" + level.prefix + "who]");
@@ -1323,14 +1323,14 @@ cmd_invisible(args)
 
 valid_ip(ip)
 {
-    ip = jumpmod\functions::strTok(ip, ".");
+    ip = jumpmod\commands::strTok(ip, ".");
     if(ip.size != 4)
         return false;
 
     for(i = 0; i < ip.size; i++) {
         validip = false;
 
-        if(!jumpmod\functions::validate_number(ip[i]))
+        if(!jumpmod\commands::validate_number(ip[i]))
             break;
 
         if((int)ip[i] >= 0 && (int)ip[i] <= 255)
@@ -1342,33 +1342,49 @@ valid_ip(ip)
     return validip;
 }
 
+// new miscmod_bans.dat file format: "<ip>%<bannedby>%<bannedname>%<duration>%<unix/servertime>%<reason>"
 cmd_ban(args)
-{
+{ // Thanks AJ and Raphael for testing
     if(args.size < 3) {
         message_player("^1ERROR: ^7Invalid number of arguments.");
         return;
     }
 
     args1 = args[1]; // num | string | IP
-    args2 = args[2]; // reason
+    duration = args[2]; // duration
+    if(!isDefined(duration) || duration == "-1" || duration == "0")
+        duration = "0s";
 
-    if(!isDefined(args1) || !isDefined(args2)) {
-        message_player("^1ERROR: ^7Invalid argument.");
+    if(duration.size < 2) {
+        message_player("^1ERROR: ^7Invalid time (" + duration + "). Expects <time><unit> format (e.g 1h) or 0/-1 for permanent ban.");
         return;
     }
 
-    validip = false;
-    if(isDefined(args[3]))
-        validip = valid_ip(args1);
+    time = "";
+    for(i = 0; i < duration.size - 1; i++)
+        time += duration[i];
 
-    if(!validip) {
-        if(jumpmod\functions::validate_number(args1)) {
+    if(!jumpmod\commands::validate_number(time)) {
+        message_player("^1ERROR: ^7Invalid time (" + time + "). Expects <time><unit> format (e.g 1h) or 0/-1 for permanent ban.");
+        return;
+    }
+
+    reason = args[3]; // reason
+    if(args.size > 3) {
+        for(a = 4; a < args.size; a++)
+            if(isDefined(args[a]))
+                reason += " " + args[a];
+    }
+
+    isipaddr = valid_ip(args1);
+    if(!isipaddr) {
+        if(jumpmod\commands::validate_number(args1)) {
             if(args1 == self getEntityNumber()) {
                 message_player("^1ERROR: ^7You can't use this command on yourself.");
                 return;
             }
 
-            player = jumpmod\functions::playerByNum(args1);
+            player = jumpmod\commands::playerByNum(args1);
             if(!isDefined(player)) {
                 message_player("^1ERROR: ^7No such player.");
                 return;
@@ -1388,55 +1404,113 @@ cmd_ban(args)
         message_player("^1ERROR: ^7Database is already in use. Try again.");
         return;
     }
+    
+    preunit = time;
+    time = (int)time;
+    if(time > 0) {
+        switch(duration[duration.size - 1]) {
+            case "s":
+                unit = "second";
+            break;
 
-    bannedreason = jumpmod\functions::namefix(args2); // To prevent malicious input
+            case "m":
+                unit = "minute";
+                time *= 60;
+            break;
+
+            case "h":
+                unit = "hour";
+                time *= 60 * 60;
+            break;
+
+            case "d":
+                unit = "day";
+                time *= 60 * 60 * 24;
+            break;
+
+            default:
+                message_player("^1ERROR: ^7Invalid time (" + duration + "). Expects <time><unit> format (e.g 10m) or 0/-1 for permanent ban.");
+            return;
+        }
+
+        if(preunit != "1")
+            unit += "s";
+    }
 
     level.banactive = true;
     filename = level.workingdir + level.banfile;
     if(fexists(filename)) {
-        if(validip) {
+        if(isipaddr) {
             bannedip = args1;
             bannedname = "^7An IP address";
         } else {
             bannedip = player getip();
-            bannedname = jumpmod\functions::namefix(player.name);
-            kickmsg = "Player Banned: ^1" + bannedreason;
-            player dropclient(kickmsg);
+            bannedname = jumpmod\commands::namefix(player.name);
         }
 
-        bannedby = jumpmod\functions::namefix(self.pers["mm_user"]);
+        bannedby = jumpmod\commands::namefix(self.pers["mm_user"]);
+        hasreason = (bool)isDefined(reason);
+        if(hasreason)
+            bannedreason = jumpmod\commands::namefix(reason); // to prevent malicious input
+        else
+            bannedreason = "N/A";
 
+        bannedsrvtime = seconds();
         file = fopen(filename, "a"); // append
         if(file != -1) {
             line = "";
             line += bannedip;
-            line += "%%" + bannedname;
-            line += "%%" + bannedreason;
             line += "%%" + bannedby;
+            line += "%%" + bannedname;
+            line += "%%" + time;
+            line += "%%" + bannedsrvtime;
+            line += "%%" + bannedreason;
             line += "\n";
             fwrite(line, file);
         }
-
         fclose(file);
 
-        message_player("^5INFO: ^7You banned IP: " + bannedip);
-        message(bannedname + " ^7was banned by " + jumpmod\functions::namefix(self.name) + " ^7for reason: " + bannedreason + ".");
-
         index = level.bans.size;
-        level.bans[index]["bannedip"] = bannedip;
-        level.bans[index]["bannedname"] = bannedname;
-        level.bans[index]["bannedreason"] = bannedreason;
-        level.bans[index]["bannedby"] = bannedby;
+        level.bans[index]["ip"] = bannedip;
+        level.bans[index]["by"] = bannedby;
+        level.bans[index]["name"] = bannedname;
+        level.bans[index]["time"] = time;
+        level.bans[index]["srvtime"] = bannedsrvtime;
+        level.bans[index]["reason"] = bannedreason;
+
+        message_player("^5INFO: ^7You banned IP: " + bannedip);
+        banmessage = bannedname + " ^7was ";
+        if(time > 0)
+            banmessage += "temporarily ";
+        else
+            banmessage += "permanently ";
+        banmessage += "banned by " + jumpmod\commands::namefix(self.name);
+        if(time > 0)
+            banmessage += "^7 for " + preunit + " " + unit;
+        if(hasreason)
+            banmessage += "^7 for reason: " + bannedreason;
+        banmessage += ".";
+        message(banmessage);
+
+        if(!isipaddr) {
+            if(time > 0)
+                kickmsg = "Temp banned (^3" + preunit + " " + unit + "^7)";
+            else
+                kickmsg = "Perm banned";
+            if(hasreason)
+                kickmsg += ": ^1" + bannedreason;
+            player dropclient(kickmsg);
+        }
     } else
         message_player("^1ERROR: ^7Ban database file doesn't exist.");
 
     level.banactive = false;
 }
 
-isbanned(bannedip)
+isbanned(ip)
 {
     for(b = 0; b < level.bans.size; b++) {
-        if(isDefined(level.bans[b]) && level.bans[b]["bannedip"] == bannedip)
+        if(level.bans[b]["ip"] == ip)
             return b;
     }
 
@@ -1469,24 +1543,25 @@ cmd_unban(args)
     banindex = isbanned(bannedip);
     if(banindex != -1) {
         message_player("^5INFO: ^7You unbanned IP: " + bannedip);
-        message(level.bans[banindex]["bannedname"] + " ^7got unbanned by " + jumpmod\functions::namefix(self.name) + "^7.");
-        jumpmod\functions::mmlog("unban;" + bannedip + ";" + level.bans[banindex]["bannedname"] + ";" + level.bans[banindex]["bannedreason"] + ";" + level.bans[banindex]["bannedby"] + ";" + jumpmod\functions::namefix(self.name));
-        level.bans[banindex] = undefined;
+        message(level.bans[banindex]["name"] + " ^7got unbanned by " + jumpmod\commands::namefix(self.name) + "^7.");
+        jumpmod\commands::mmlog("unban;" + bannedip + ";" + level.bans[banindex]["name"] + ";" + level.bans[banindex]["time"] + ";" + level.bans[banindex]["srvtime"] + ";" + level.bans[banindex]["by"] + ";" + jumpmod\commands::namefix(self.name));
+        level.bans[banindex]["ip"] = "unbanned";
 
         level.banactive = true;
         filename = level.workingdir + level.banfile;
-        if(fexists(filename)) { // may not be needed as "w" created a new file
+        if(fexists(filename)) {
             file = fopen(filename, "w");
             if(file != -1) {
                 for(i = 0; i < level.bans.size; i++) {
-                    if(!isDefined(level.bans[i])) // if(i == banindex)
+                    if(level.bans[i]["ip"] == "unbanned")
                         continue;
-
                     line = "";
-                    line += level.bans[i]["bannedip"];
-                    line += "%%" + level.bans[i]["bannedname"];
-                    line += "%%" + level.bans[i]["bannedreason"];
-                    line += "%%" + level.bans[i]["bannedby"];
+                    line += level.bans[i]["ip"];
+                    line += "%%" + level.bans[i]["by"];
+                    line += "%%" + level.bans[i]["name"];
+                    line += "%%" + level.bans[i]["time"];
+                    line += "%%" + level.bans[i]["srvtime"];
+                    line += "%%" + level.bans[i]["reason"];
                     line += "\n";
                     fwrite(line, file);
                 }
@@ -1507,6 +1582,19 @@ cmd_report(args)
         return;
     }
 
+    if(!isDefined(self.pers["reports"]))
+        self.pers["reports"] = 0;
+
+    reportlimit = getCvarInt("scr_mm_reportlimit_permap");
+    if(reportlimit == 0)
+        reportlimit = 2;
+    if(self.pers["reports"] >= reportlimit) {
+        message_player("^1ERROR: ^7Too many reports sent this map.");
+        return;
+    }
+
+    self.pers["reports"]++;
+
     args1 = args[1]; // num | string
     args2 = args[2]; // reason
 
@@ -1515,13 +1603,13 @@ cmd_report(args)
         return;
     }
 
-    if(jumpmod\functions::validate_number(args1)) {
+    if(jumpmod\commands::validate_number(args1)) {
         if(args1 == self getEntityNumber()) {
             message_player("^1ERROR: ^7You can't use this command on yourself.");
             return;
         }
 
-        player = jumpmod\functions::playerByNum(args1);
+        player = jumpmod\commands::playerByNum(args1);
         if(!isDefined(player)) {
             message_player("^1ERROR: ^7No such player.");
             return;
@@ -1541,26 +1629,26 @@ cmd_report(args)
         return;
     }
 
-    reportreason = jumpmod\functions::namefix(args2); // To prevent malicious input
-
+    reportreason = jumpmod\commands::namefix(args2); // To prevent malicious input
     level.reportactive = true;
     filename = level.workingdir + level.reportfile;
     if(fexists(filename)) {
         file = fopen(filename, "a"); // append
         if(file != -1) {
             line = "";
-            line += jumpmod\functions::namefix(self.name);
+            line += jumpmod\commands::namefix(self.name);
             line += "%%" + self getip();
-            line += "%%" + jumpmod\functions::namefix(player.name);
+            line += "%%" + jumpmod\commands::namefix(player.name);
             line += "%%" + player getip();
             line += "%%" + reportreason;
+            line += "%%" + seconds();
             line += "\n";
             fwrite(line, file);
         }
 
         fclose(file);
 
-        message_player("^5INFO: ^7You reported " + jumpmod\functions::namefix(player.name) + "^7 with reason: " + reportreason);
+        message_player("^5INFO: ^7You reported " + jumpmod\commands::namefix(player.name) + "^7 with reason: " + reportreason);
     } else
         message_player("^1ERROR: ^7Report database file doesn't exist.");
 

@@ -143,12 +143,40 @@ Callback_StartGameType()
 
 Callback_PlayerConnect()
 {
-    self notify("disconnect");
-    checkbannedip = self getip();
-    banindex = jumpmod\commands::isbanned(checkbannedip);
+    bannedip = self getip();
+    banindex = jumpmod\commands::isbanned(bannedip);
     if(banindex != -1) {
-        self.isbanned = true; // flag for PlayerDisconnect
-        bannedreason = level.bans[banindex]["bannedreason"]; // to avoid race condition
+        bannedtime = level.bans[banindex]["time"];
+        if(bannedtime > 0) {
+            bannedsrvtime = level.bans[banindex]["srvtime"];
+            remaining = bannedtime - (seconds() - bannedsrvtime);
+            if(remaining > 0) {
+                self.isbanned = true;
+                bannedreason = "tempban remaining ";
+                if(remaining >= 86400) {
+                    time = remaining / 60 / 60 / 24;
+                    bannedreason += time + " day";
+                } else if(remaining >= 3600) {
+                    time = remaining / 60 / 60;
+                    bannedreason += time + " hour";
+                } else if(remaining >= 60) {
+                    time = remaining / 60;
+                    bannedreason += time + " minute";
+                } else {
+                    time = remaining;
+                    bannedreason += time + " second";
+                }
+
+                if(time != 1)
+                    bannedreason += "s";
+            }
+        } else {
+            self.isbanned = true;
+            bannedreason = level.bans[banindex]["reason"]; // to avoid race condition
+        }
+    }
+
+    if(isDefined(self.isbanned)) { // used in PlayerDisconnect
         self sendservercommand("w \"Player Banned: ^1" + bannedreason + "\"");
         self waittill("begin");
         wait 0.05; // server/script crashes without it
