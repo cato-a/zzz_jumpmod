@@ -254,6 +254,7 @@ Callback_PlayerConnect()
 
 Callback_PlayerDisconnect()
 {
+    self notify("disconnect");
     thread jumpmod\commands::_delete();
     thread jumpmod\miscmod::welcome_remove();
     if(isDefined(self.isbanned))
