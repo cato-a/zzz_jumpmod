@@ -200,7 +200,7 @@ Callback_PlayerConnect()
     self.pers["mm_chatmessages"] = 1;
 
     thread jumpmod\commands::_checkLoggedIn();
-    self thread mmKeys();
+    self thread mmKeys(); // after "begin"
 
     if(game["state"] == "intermission") {
         spawnIntermission();
@@ -356,10 +356,11 @@ jmpAntiblock()
     }
 }
 
-jmpSavePosition()
+jmpSavePosition(ladder)
 {
     currentslot = jumpmod\functions::getWeaponSlot(self getCurrentWeapon());
-    if(!(currentslot == "pistol" || currentslot == "grenade"))
+    if((currentslot == "primary" || currentslot == "primaryb")
+        || (currentslot == "none" && !(self jumpmod\functions::isOnLadder())))
         return;
 
     self.tmp_arr = []; // Temporary array
@@ -795,12 +796,12 @@ mmKeys()
             keys += "u";
          }
 
-        if(keys.size > 0 && self attackButtonPressed()) {
-            while(self attackButtonPressed())
-                wait 0.05;
+        // if(keys.size > 0 && self attackButtonPressed()) { // not in use currently
+        //     while(self attackButtonPressed())
+        //         wait 0.05;
 
-            keys += "a";
-         }
+        //     keys += "a";
+        //  }
 
         if(self meleeButtonPressed()) {
             while(self meleeButtonPressed())
@@ -815,16 +816,12 @@ mmKeys()
             switch(keys) { // add your custom functions here for keycombos :)
                 case "mm":
                     while(!(self isOnGround()) && !(self jumpmod\functions::isOnLadder()))
-                        wait 0.05;
-
-                    if(self isOnGround() || self jumpmod\functions::isOnLadder())
-                        self thread jmpSavePosition();
-
+                        wait 0.05; // wait till player is on ground or on a ladder when issuing this command
+                    self thread jmpSavePosition();
                     reset = true;
                 break;
                 case "uu":
                     self thread jmpLoadPosition();
-
                     reset = true;
                 break;
             }

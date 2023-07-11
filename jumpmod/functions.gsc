@@ -108,7 +108,7 @@ isOnLadder() { // Cheese :D
 
 getWeaponSlot(weapon)
 {
-    if(!isDefined(weapon))
+    if(!isDefined(weapon) || weapon == "none")
         return "none";
 
     if(weapon == self getWeaponSlotWeapon("primary"))
