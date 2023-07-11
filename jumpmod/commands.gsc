@@ -111,6 +111,10 @@ init()
     // MiscMod commands
     commands(53, level.prefix + "replay"      , ::cmd_replay       , "Replay the last jump. [" + level.prefix + "replay <time>]");
     commands(54, level.prefix + "showspeed"   , ::cmd_showspeed    , "Show current player/server speed. [" + level.prefix + "showspeed]");
+    commands(55, level.prefix + "bansearch"   , ::cmd_bansearch    , "Search for bans in the banlist. [" + level.prefix + "bansearch <query>]");
+    commands(56, level.prefix + "banlist"     , ::cmd_banlist      , "List most recent bans. [" + level.prefix + "banlist]");
+    commands(57, level.prefix + "reportlist"  , ::cmd_reportlist   , "List most recent reports. [" + level.prefix + "reportlist]");
+
 
     level.voteinprogress = getTime(); // !vote command
     thread _loadBans(); // reload bans from dat file every round
@@ -1323,14 +1327,14 @@ cmd_invisible(args)
 
 valid_ip(ip)
 {
-    ip = jumpmod\commands::strTok(ip, ".");
+    ip = jumpmod\functions::strTok(ip, ".");
     if(ip.size != 4)
         return false;
 
     for(i = 0; i < ip.size; i++) {
         validip = false;
 
-        if(!jumpmod\commands::validate_number(ip[i]))
+        if(!jumpmod\functions::validate_number(ip[i]))
             break;
 
         if((int)ip[i] >= 0 && (int)ip[i] <= 255)
@@ -1364,7 +1368,7 @@ cmd_ban(args)
     for(i = 0; i < duration.size - 1; i++)
         time += duration[i];
 
-    if(!jumpmod\commands::validate_number(time)) {
+    if(!jumpmod\functions::validate_number(time)) {
         message_player("^1ERROR: ^7Invalid time (" + time + "). Expects <time><unit> format (e.g 1h) or 0/-1 for permanent ban.");
         return;
     }
@@ -1378,13 +1382,13 @@ cmd_ban(args)
 
     isipaddr = valid_ip(args1);
     if(!isipaddr) {
-        if(jumpmod\commands::validate_number(args1)) {
+        if(jumpmod\functions::validate_number(args1)) {
             if(args1 == self getEntityNumber()) {
                 message_player("^1ERROR: ^7You can't use this command on yourself.");
                 return;
             }
 
-            player = jumpmod\commands::playerByNum(args1);
+            player = jumpmod\functions::playerByNum(args1);
             if(!isDefined(player)) {
                 message_player("^1ERROR: ^7No such player.");
                 return;
@@ -1445,13 +1449,13 @@ cmd_ban(args)
             bannedname = "^7An IP address";
         } else {
             bannedip = player getip();
-            bannedname = jumpmod\commands::namefix(player.name);
+            bannedname = jumpmod\functions::namefix(player.name);
         }
 
-        bannedby = jumpmod\commands::namefix(self.pers["mm_user"]);
+        bannedby = jumpmod\functions::namefix(self.pers["mm_user"]);
         hasreason = (bool)isDefined(reason);
         if(hasreason)
-            bannedreason = jumpmod\commands::namefix(reason); // to prevent malicious input
+            bannedreason = jumpmod\functions::namefix(reason); // to prevent malicious input
         else
             bannedreason = "N/A";
 
@@ -1484,7 +1488,7 @@ cmd_ban(args)
             banmessage += "temporarily ";
         else
             banmessage += "permanently ";
-        banmessage += "banned by " + jumpmod\commands::namefix(self.name);
+        banmessage += "banned by " + jumpmod\functions::namefix(self.name);
         if(time > 0)
             banmessage += "^7 for " + preunit + " " + unit;
         if(hasreason)
@@ -1543,8 +1547,8 @@ cmd_unban(args)
     banindex = isbanned(bannedip);
     if(banindex != -1) {
         message_player("^5INFO: ^7You unbanned IP: " + bannedip);
-        message(level.bans[banindex]["name"] + " ^7got unbanned by " + jumpmod\commands::namefix(self.name) + "^7.");
-        jumpmod\commands::mmlog("unban;" + bannedip + ";" + level.bans[banindex]["name"] + ";" + level.bans[banindex]["time"] + ";" + level.bans[banindex]["srvtime"] + ";" + level.bans[banindex]["by"] + ";" + jumpmod\commands::namefix(self.name));
+        message(level.bans[banindex]["name"] + " ^7got unbanned by " + jumpmod\functions::namefix(self.name) + "^7.");
+        jumpmod\functions::mmlog("unban;" + bannedip + ";" + level.bans[banindex]["name"] + ";" + level.bans[banindex]["time"] + ";" + level.bans[banindex]["srvtime"] + ";" + level.bans[banindex]["by"] + ";" + jumpmod\functions::namefix(self.name));
         level.bans[banindex]["ip"] = "unbanned";
 
         level.banactive = true;
@@ -1603,13 +1607,13 @@ cmd_report(args)
         return;
     }
 
-    if(jumpmod\commands::validate_number(args1)) {
+    if(jumpmod\functions::validate_number(args1)) {
         if(args1 == self getEntityNumber()) {
             message_player("^1ERROR: ^7You can't use this command on yourself.");
             return;
         }
 
-        player = jumpmod\commands::playerByNum(args1);
+        player = jumpmod\functions::playerByNum(args1);
         if(!isDefined(player)) {
             message_player("^1ERROR: ^7No such player.");
             return;
@@ -1629,16 +1633,16 @@ cmd_report(args)
         return;
     }
 
-    reportreason = jumpmod\commands::namefix(args2); // To prevent malicious input
+    reportreason = jumpmod\functions::namefix(args2); // To prevent malicious input
     level.reportactive = true;
     filename = level.workingdir + level.reportfile;
     if(fexists(filename)) {
         file = fopen(filename, "a"); // append
         if(file != -1) {
             line = "";
-            line += jumpmod\commands::namefix(self.name);
+            line += jumpmod\functions::namefix(self.name);
             line += "%%" + self getip();
-            line += "%%" + jumpmod\commands::namefix(player.name);
+            line += "%%" + jumpmod\functions::namefix(player.name);
             line += "%%" + player getip();
             line += "%%" + reportreason;
             line += "%%" + seconds();
@@ -1648,7 +1652,7 @@ cmd_report(args)
 
         fclose(file);
 
-        message_player("^5INFO: ^7You reported " + jumpmod\commands::namefix(player.name) + "^7 with reason: " + reportreason);
+        message_player("^5INFO: ^7You reported " + jumpmod\functions::namefix(player.name) + "^7 with reason: " + reportreason);
     } else
         message_player("^1ERROR: ^7Report database file doesn't exist.");
 
@@ -3765,4 +3769,210 @@ cmd_showspeed_cleanup() // not a command :P
         self.speedhudy destroy();
     if(isDefined(self.speedhudyval))
         self.speedhudyval destroy();
+}
+
+cmd_bansearch(args)
+{
+    if(args.size != 2) {
+        message_player("^1ERROR: ^7Invalid number of arguments. Expects: !bansearch <query>");
+        return;
+    }
+
+    query = args[1]; // query
+    results = [];
+    if(level.bans.size > 0) {
+        for(i = 0; i < level.bans.size; i++) {
+            ip = level.bans[i]["ip"];
+            if(ip.size >= query.size) {
+                if(jumpmod\functions::pmatch(ip, query)) {
+                    results[results.size] = level.bans[i];
+                    continue;
+                }
+            }
+
+            name = level.bans[i]["name"];
+            name = jumpmod\functions::monotone(name);
+            name = jumpmod\functions::strip(name);
+            if(name.size >= query.size)
+                if(jumpmod\functions::pmatch(tolower(name), tolower(query)))
+                    results[results.size] = level.bans[i];
+        }
+
+        if(results.size > 0) {
+            limit = getCvarInt("scr_mm_bansearch_limit");
+            if(limit == 0)
+                limit = 90;
+
+            if(results.size < limit)
+                limit = results.size;
+
+            pdata = spawnStruct();
+            pdata.ip = 0;
+            pdata.by = 0;
+            pdata.reason = 0;
+
+            for(i = 0; i < limit; i++) {
+                if(results[i]["ip"].size > pdata.ip)
+                    pdata.ip = results[i]["ip"].size;
+                if(results[i]["by"].size > pdata.by)
+                    pdata.by = results[i]["by"].size;
+                if(results[i]["reason"].size > pdata.reason)
+                    pdata.reason = results[i]["reason"].size;
+            }
+
+            for(i = 0; i < limit; i++) {
+                message = "^1[^7IP: " + results[i]["ip"] + spaces(pdata.ip - results[i]["ip"].size);
+                message += " ^1|^7 By: " + results[i]["by"] + spaces(pdata.by - results[i]["by"].size);
+                message += " ^1|^7 Reason: " + results[i]["reason"] + spaces(pdata.reason - results[i]["reason"].size);
+                message += "^1]^3 -->^7 " + results[i]["name"];
+                message_player(message);
+                if((i + 1) % 15 == 0) // Prevent: SERVERCOMMAND OVERFLOW
+                    wait 0.25;
+            }
+
+            if(results.size > limit)
+                message_player("More than " + limit + " results from the banlist. Showing up to " + limit + " bans.");
+        } else
+            message_player("^1ERROR: ^7No bans found.");
+
+    } else
+        message_player("^1ERROR: ^7No bans in banlist.");
+}
+
+cmd_banlist(args)
+{ // [ip | bannedby | reason ] -> name
+    if(level.bans.size > 0) {
+        numbans = getCvarInt("scr_mm_banlist_limit");
+        if(numbans == 0)
+            numbans = 90;
+
+        offset = 0;
+        if(level.bans.size - numbans > 0)
+            offset = level.bans.size - numbans;
+
+        pdata = spawnStruct();
+        pdata.ip = 0;
+        pdata.by = 0;
+        pdata.reason = 0;
+
+        for(i = offset; i < level.bans.size; i++) {
+            if(level.bans[i]["ip"].size > pdata.ip)
+                pdata.ip = level.bans[i]["ip"].size;
+            if(level.bans[i]["by"].size > pdata.by)
+                pdata.by = level.bans[i]["by"].size;
+            if(level.bans[i]["reason"].size > pdata.reason)
+                pdata.reason = level.bans[i]["reason"].size;
+        }
+
+        for(i = offset; i < level.bans.size; i++) {
+            message = "^1[^7IP: " + level.bans[i]["ip"] + spaces(pdata.ip - level.bans[i]["ip"].size);
+            message += " ^1|^7 By: " + level.bans[i]["by"] + spaces(pdata.by - level.bans[i]["by"].size);
+            message += " ^1|^7 Reason: " + level.bans[i]["reason"] + spaces(pdata.reason - level.bans[i]["reason"].size);
+            message += "^1]^3 -->^7 " + level.bans[i]["name"];
+            message_player(message);
+            if((i + 1) % 15 == 0) // Prevent: SERVERCOMMAND OVERFLOW
+                wait 0.25;
+        }
+
+        if(offset > 0)
+            message_player("More than " + numbans + " bans in the banlist. Showing the " + numbans + " most recent bans.");
+    } else
+        message_player("^1ERROR: ^7No bans in banlist.");
+}
+
+cmd_reportlist(args) // format: <reported by>%<reported by IP>%<reported user>%<reported user IP>%<report message>&<unixtime>
+{
+    filename = level.workingdir + level.reportfile;
+    if(fexists(filename)) {
+        file = fopen(filename, "r");
+        if(file != -1)
+            data = fread(0, file); // codextended.so bug?
+        fclose(file); // all-in-one chunk
+
+        if(isDefined(data)) {
+            reports = [];
+            data = jumpmod\functions::strTok(data, "\n");
+            for(i = 0; i < data.size; i++) {
+                if(!isDefined(data[i])) // crashed here for some odd reason? this should never happen
+                    continue; // crashed here for some odd reason? this should never happen
+
+                line = jumpmod\functions::strTok(data[i], "%"); // crashed here for some odd reason? this should never happen
+                if(line.size != 6)
+                    continue;
+
+                reportfile_error = false;
+                for(l = 0; l < line.size; l++) {
+                    if(!isDefined(line[l])) {
+                        reportfile_error = true;
+                        break;
+                    }
+                }
+
+                if(reportfile_error)
+                    continue;
+
+                reportedby = line[0];
+                reportedbyip = line[1];
+                reporteduser = jumpmod\functions::strip(line[2]);
+                reporteduserip = line[3];
+                reportedmessage = jumpmod\functions::strip(line[4]);
+                reportedunixtime = line[5];
+
+                index = reports.size;
+                reports[index]["by"] = reportedby;
+                reports[index]["byip"] = reportedbyip;
+                reports[index]["user"] = reporteduser;
+                reports[index]["userip"] = reporteduserip;
+                reports[index]["message"] = reportedmessage;
+                reports[index]["unixtime"] = reportedunixtime;
+            }
+
+            if(reports.size > 0) {
+                limit = getCvarInt("scr_mm_reportlist_limit");
+                if(limit == 0)
+                    limit = 30;
+
+                offset = 0;
+                if(reports.size - limit > 0)
+                    offset = reports.size - limit;
+
+                pdata = spawnStruct();
+                pdata.by = 0;
+                pdata.byip = 0;
+                pdata.user = 0;
+                pdata.userip = 0;
+                pdata.message = 0;
+
+                for(i = offset; i < reports.size; i++) {
+                    if(reports[i]["by"].size > pdata.by)
+                        pdata.by = reports[i]["by"].size;
+                    if(reports[i]["byip"].size > pdata.byip)
+                        pdata.byip = reports[i]["byip"].size;
+                    if(reports[i]["user"].size > pdata.user)
+                        pdata.user = reports[i]["user"].size;
+                    if(reports[i]["userip"].size > pdata.userip)
+                        pdata.userip = reports[i]["userip"].size;
+                    if(reports[i]["message"].size > pdata.message)
+                        pdata.message = reports[i]["message"].size;
+                }
+
+                for(i = offset; i < reports.size; i++) {
+                    message = "^2[^7 " + reports[i]["byip"] + spaces(pdata.byip - reports[i]["byip"].size);
+                    message += " ^2|^7 " + reports[i]["by"] + spaces(pdata.by - reports[i]["by"].size) + "^2] ^7reported";
+                    message_player(message);
+                    message = "^1[^7 " + reports[i]["userip"] + spaces(pdata.userip - reports[i]["userip"].size);
+                    message += " ^1|^7 " + reports[i]["user"] + spaces(pdata.user - reports[i]["user"].size) + "^1] ^7for";
+                    message_player(message);
+                    message = "^3reason>^7 " + reports[i]["message"];
+                    message_player(message);
+                    if((i + 1) % 5 == 0) // Prevent: SERVERCOMMAND OVERFLOW
+                        wait 0.25;
+                }
+
+                if(offset > 0)
+                    message_player("More than " + limit + " reports in the reportlist. Showing the " + limit + " most recent reports.");
+            } else
+                message_player("^1ERROR: ^7No reports in reportlist.");
+        }
+    }
 }
