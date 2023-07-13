@@ -115,6 +115,7 @@ init()
     commands(56, level.prefix + "banlist"     , ::cmd_banlist      , "List most recent bans. [" + level.prefix + "banlist]");
     commands(57, level.prefix + "reportlist"  , ::cmd_reportlist   , "List most recent reports. [" + level.prefix + "reportlist]");
 
+    level.cmdaliases["!tp"] = "!teleport";
 
     level.voteinprogress = getTime(); // !vote command
     thread _loadBans(); // reload bans from dat file every round
@@ -220,6 +221,9 @@ command(str)
         }
 
         command = cmd[0]; // !something
+        if(isDefined(level.cmdaliases[command]))
+            command = level.cmdaliases[command];
+
         if(command != "!login") {
             commandargs = "";
             for(i = 1; i < cmd.size; i++) {
