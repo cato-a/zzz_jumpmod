@@ -356,7 +356,7 @@ jmpAntiblock()
     }
 }
 
-jmpSavePosition(ladder)
+jmpSavePosition()
 {
     currentslot = jumpmod\functions::getWeaponSlot(self getCurrentWeapon());
     if((currentslot == "primary" || currentslot == "primaryb")

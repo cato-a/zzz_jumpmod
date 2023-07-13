@@ -110,7 +110,7 @@ init()
     commands(52, level.prefix + "disarm"      , ::cmd_disarm       , "Disarm a player. [" + level.prefix + "disarm <num>]");
     // MiscMod commands
     commands(53, level.prefix + "replay"      , ::cmd_replay       , "Replay the last jump. [" + level.prefix + "replay <time>]");
-    commands(54, level.prefix + "showspeed"   , ::cmd_showspeed    , "Show current player/server speed. [" + level.prefix + "showspeed]");
+    commands(54, level.prefix + "showspeed"   , ::cmd_showspeed    , "Show current player speed. [" + level.prefix + "showspeed]");
     commands(55, level.prefix + "bansearch"   , ::cmd_bansearch    , "Search for bans in the banlist. [" + level.prefix + "bansearch <query>]");
     commands(56, level.prefix + "banlist"     , ::cmd_banlist      , "List most recent bans. [" + level.prefix + "banlist]");
     commands(57, level.prefix + "reportlist"  , ::cmd_reportlist   , "List most recent reports. [" + level.prefix + "reportlist]");
