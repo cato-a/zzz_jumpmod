@@ -2399,6 +2399,7 @@ cmd_vote_huds() // not a command :P
         level.voteYesText.alignX = "center";
         level.voteYesText.alignY = "middle";
         level.voteYesText.sort = 10000;
+        level.voteYesText.archived = true;
         level.voteYesText setText(&"Yes");
         level.voteYesText.color = (1, 0.2, 0);
     } else
@@ -2411,6 +2412,7 @@ cmd_vote_huds() // not a command :P
         level.voteNoText.alignX = "center";
         level.voteNoText.alignY = "middle";
         level.voteNoText.sort = 10000;
+        level.voteNoText.archived = true;
         level.voteNoText setText(&"No");
         level.voteNoText.color = (1, 0.2, 0);
     } else
@@ -2423,6 +2425,7 @@ cmd_vote_huds() // not a command :P
         level.voteYesValue.alignX = "center";
         level.voteYesValue.alignY = "middle";
         level.voteYesValue.sort = 10000;
+        level.voteYesValue.archived = true;
         level.voteYesValue setValue(0);
         level.voteYesValue.color = (1, 0.7, 0);
     } else
@@ -2435,6 +2438,7 @@ cmd_vote_huds() // not a command :P
         level.voteNoValue.alignX = "center";
         level.voteNoValue.alignY = "middle";
         level.voteNoValue.sort = 10000;
+        level.voteNoValue.archived = true;
         level.voteNoValue setValue(0);
         level.voteNoValue.color = (1, 0.7, 0);
     } else
@@ -2447,6 +2451,7 @@ cmd_vote_huds() // not a command :P
         level.voteCommandText1.alignX = "left";
         level.voteCommandText1.alignY = "middle";
         level.voteCommandText1.sort = 10000;
+        level.voteCommandText1.archived = true;
         level.voteCommandText1 setText(&"Use command:");
         level.voteCommandText1.color = (1, 0.2, 0);
         level.voteCommandText1.fontScale = 0.75;
@@ -2460,6 +2465,7 @@ cmd_vote_huds() // not a command :P
         level.voteCommandText2.alignX = "left";
         level.voteCommandText2.alignY = "middle";
         level.voteCommandText2.sort = 10000;
+        level.voteCommandText2.archived = true;
         level.voteCommandText2 setText(&"!vote <yes|no>");
         level.voteCommandText2.color = (1, 0.7, 0);
         level.voteCommandText2.fontScale = 0.75;
@@ -2473,6 +2479,7 @@ cmd_vote_huds() // not a command :P
         level.voteCommandTimerText.alignX = "left";
         level.voteCommandTimerText.alignY = "middle";
         level.voteCommandTimerText.sort = 10000;
+        level.voteCommandTimerText.archived = true;
         level.voteCommandTimerText setText(&"Vote ends in:");
         level.voteCommandTimerText.color = (1, 0.2, 0);
         level.voteCommandTimerText.fontScale = 0.75;
@@ -2486,6 +2493,7 @@ cmd_vote_huds() // not a command :P
         level.voteCommandTimer.alignX = "left";
         level.voteCommandTimer.alignY = "middle";
         level.voteCommandTimer.sort = 10000;
+        level.voteCommandTimer.archived = true;
         level.voteCommandTimer setTenthsTimer(level.votecommandtime);
         level.voteCommandTimer.color = (1, 0.7, 0);
         level.voteCommandTimer.fontScale = 0.75;
