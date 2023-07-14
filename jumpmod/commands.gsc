@@ -153,6 +153,10 @@ precache()
     precacheString(&"Z:");
     precacheString(&"A:");
     precacheString(&"REPLAY");
+    precacheString(&"extend the map");
+    precacheString(&"change the map");
+    precacheString(&"end the map");
+    precacheString(&"Vote to");
 }
 
 commands(id, cmd, func, desc)
@@ -207,7 +211,11 @@ command(str)
     creturn(); // return in codextended.so
 
     cmd = jumpmod\functions::strTok(str, " "); // is a command with level.prefix
-    if(isDefined(level.commands[cmd[0]])) {
+    command = cmd[0]; // !something
+    if(isDefined(level.cmdaliases[command]))
+        command = level.cmdaliases[command];
+
+    if(isDefined(level.commands[command])) {
         perms = level.perms["default"];
 
         cmduser = "none";
@@ -219,10 +227,6 @@ command(str)
             cmdgroup = self.pers["mm_group"];
             perms = jumpmod\functions::array_join(perms, level.perms[cmdgroup]);
         }
-
-        command = cmd[0]; // !something
-        if(isDefined(level.cmdaliases[command]))
-            command = level.cmdaliases[command];
 
         if(command != "!login") {
             commandargs = "";
@@ -603,7 +607,7 @@ cmd_version(args)
         return;
     }
 
-    message_player("This server is running jumpmod v1.9 with MiscMod-stripped.");
+    message_player("This server is running jumpmod v1.9.1 with MiscMod-stripped.");
 }
 
 cmd_name(args)
@@ -2263,7 +2267,7 @@ cmd_vote(args)
         self.hasvotecommandvoted = "y"; // I started the vote, so 'yes' unless I change it
         message_player("^5INFO: ^7Vote registered. Your vote is currently 'yes'.");
 
-        cmd_vote_huds_timer(); // handle/update the huds
+        cmd_vote_huds_timer(args1); // handle/update the huds
 
         totalvotes = 0;
         players = getEntArray("player", "classname");
@@ -2315,9 +2319,9 @@ cmd_vote(args)
     level.voteinprogress = getTime();
 }
 
-cmd_vote_huds_timer() // not a command :P
+cmd_vote_huds_timer(votetype) // not a command :P
 {
-    cmd_vote_huds(); // create huds
+    cmd_vote_huds(votetype); // create huds
 
     for(i = 0; i < level.votecommandtime; i++) { // update huds
         y = 0;
@@ -2348,10 +2352,10 @@ cmd_vote_huds_timer() // not a command :P
         wait 1;
     }
 
-    cmd_vote_huds(); // cleanup huds
+    cmd_vote_huds(votetype); // cleanup huds
 }
 
-cmd_vote_huds() // not a command :P
+cmd_vote_huds(votetype) // not a command :P
 {
     x = 40;
     y = 120;
@@ -2499,6 +2503,45 @@ cmd_vote_huds() // not a command :P
         level.voteCommandTimer.fontScale = 0.75;
     } else
         level.voteCommandTimer destroy();
+
+    if(!isDefined(level.voteCommandTypeText1)) {
+        level.voteCommandTypeText1 = newHudElem();
+        level.voteCommandTypeText1.x = x;
+        level.voteCommandTypeText1.y = y - 23;
+        level.voteCommandTypeText1.alignX = "left";
+        level.voteCommandTypeText1.alignY = "middle";
+        level.voteCommandTypeText1.sort = 10000;
+        level.voteCommandTypeText1.archived = true;
+        level.voteCommandTypeText1 setText(&"Vote to");
+        level.voteCommandTypeText1.color = (1, 0.2, 0);
+        level.voteCommandTypeText1.fontScale = 1;
+    } else
+        level.voteCommandTypeText1 destroy();
+
+    if(!isDefined(level.voteCommandTypeText2)) {
+        level.voteCommandTypeText2 = newHudElem();
+        level.voteCommandTypeText2.x = x + 41;
+        level.voteCommandTypeText2.y = y - 23;
+        level.voteCommandTypeText2.alignX = "left";
+        level.voteCommandTypeText2.alignY = "middle";
+        level.voteCommandTypeText2.sort = 10000;
+        level.voteCommandTypeText2.archived = true;
+        switch(votetype) {
+            case "endmap":
+                level.voteCommandTypeText2 setText(&"end the map");
+            break;
+            case "extend":
+                level.voteCommandTypeText2 setText(&"extend the map");
+            break;
+            case "map":
+            case "changemap":
+                level.voteCommandTypeText2 setText(&"change the map");
+            break;
+        }
+        level.voteCommandTypeText2.color = (1, 0.7, 0);
+        level.voteCommandTypeText2.fontScale = 1;
+    } else
+        level.voteCommandTypeText2 destroy();
 }
 
 cmd_gps(args)
