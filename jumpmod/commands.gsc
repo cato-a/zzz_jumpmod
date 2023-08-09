@@ -2760,18 +2760,6 @@ cmd_move(args) // From Heupfer jumpmod
             return;
         }
 
-        // dirv = player.origin + dirv;
-        // if(!positionWouldTelefrag(dirv) && jumpmod\functions::_canspawnat(dirv)) {
-        // 	if(player != self) {
-        // 		message_player("^5INFO: ^7Moving player " + jumpmod\functions::namefix(player.name) + "^7 " + units + " units " + direction + ".");
-        // 		message_player("^5INFO: ^7You were moved by " + jumpmod\functions::namefix(self.name) + "^7 " + units + " units " + direction + ".");
-        // 	} else
-        // 		message_player("^5INFO: ^7You moved yourself " + units + " units " + direction + ".");
-
-        // 	player setOrigin(dirv);
-        // } else
-        // 	message_player("^1ERROR: ^7Unable to move to the specified direction.");
-
         if(direction == "left" || direction == "right")
             direction = "to the " + direction;
 
@@ -2781,9 +2769,55 @@ cmd_move(args) // From Heupfer jumpmod
         } else
             message_player("^5INFO: ^7You moved yourself " + units + " units " + direction + ".");
 
+        if(isDefined(player.cmdmovepos))
+            player cmd_move_link(true); // unlink
+
         player setOrigin(player.origin + dirv);
+        if(!isDefined(player.cmdmovepos))
+            player thread cmd_move_freeze();
+        else
+            player cmd_move_link(); // link
     } else
         message_player("^1ERROR: ^7Player must be alive.");
+}
+
+cmd_move_freeze() // not a command :D
+{
+    self endon("disconnect");
+    self cmd_move_link(); // link
+
+    while(isAlive(self) && self.sessionstate == "playing"
+            && isDefined(self.cmdmovepos)
+            && !(self meleeButtonPressed()
+            || self useButtonPressed()
+            || self attackButtonPressed()
+            || self backButtonPressed()
+            || self forwardButtonPressed()
+            || self leftButtonPressed()
+            || self rightButtonPressed()
+            || self moveupButtonPressed()
+            || self movedownButtonPressed()
+            || self aimButtonPressed()
+            || self reloadButtonPressed()
+            || self leanLeftButtonPressed()
+            || self leanRightButtonPressed())) {
+        wait 0.05;
+    }
+
+    self cmd_move_link(true); // unlink
+    self.cmdmovepos = undefined;
+}
+
+cmd_move_link(unlink) // not a command :)
+{
+    if(!isDefined(unlink)) {
+        self.cmdmovepos = spawn("script_origin", self.origin);
+        self linkTo(self.cmdmovepos);
+    } else {
+        self unlink();
+        if(isDefined(self.cmdmovepos))
+            self.cmdmovepos delete();
+    }
 }
 
 cmd_retry(args)
