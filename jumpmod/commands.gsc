@@ -69,7 +69,7 @@ init()
     commands(13, level.prefix + "kick"        , ::cmd_kick         , "Kick a player. [" + level.prefix + "kick <num> <reason>]");
     commands(14, level.prefix + "reload"      , ::cmd_reload       , "Reload MiscMod commands. [" + level.prefix + "reload]");
     commands(15, level.prefix + "restart"     , ::cmd_restart      , "Restart map (soft). [" + level.prefix + "restart (*)]");
-    commands(16, level.prefix + "map"         , ::cmd_map          , "Change map and gametype. [" + level.prefix + "map <map> (gametype)]");
+    commands(16, level.prefix + "map"         , ::cmd_map          , "Change map. [" + level.prefix + "map <mapname>]");
     commands(17, level.prefix + "status"      , ::cmd_status       , "List players. [" + level.prefix + "status]");
     commands(18, level.prefix + "plist"       , ::cmd_status       , "List players and their <num> values. [" + level.prefix + "list]");
     commands(19, level.prefix + "warn"        , ::cmd_warn         , "Warn player. [" + level.prefix + "warn <num> <message>]");
@@ -947,23 +947,14 @@ cmd_restart(args)
     map_restart(restart);
 }
 
-cmd_map(args)
-{
-    if(args.size > 3) {
+cmd_map(args) // Original command !map <mapname> <gametype>, the <gametype> component removed as jump server is always "jmp"
+{ // Disable accidental changing the "jmp" to "dm" or other gametype - Reported by IronStone
+    if(args.size != 2) {
         message_player("^1ERROR: ^7Invalid number of arguments.");
         return;
     }
 
     map = args[1];
-    if(!isDefined(map)) {
-        message_player("^1ERROR: ^7Invalid argument.");
-        return;
-    }
-
-    gametype = level.gametype;
-    if(isDefined(args[2]))
-        gametype = args[2];
-
     mapvar = getCvar("scr_mm_cmd_maps");
     for(i = 1;; i++) {
         tmpvar = getCvar("scr_mm_cmd_maps" + i);
@@ -990,8 +981,8 @@ cmd_map(args)
     }
 
     if(jumpmod\functions::in_array(maps, map)) {
-        setCvar("sv_mapRotationCurrent", "gametype " + gametype + " map " + map);
-        message("^5INFO: ^7Map changed to " + map + " (" + gametype + ") by " + jumpmod\functions::namefix(self.name) + "^7.");
+        setCvar("sv_mapRotationCurrent", "gametype " + level.gametype + " map " + map);
+        message("^5INFO: ^7Map changed to " + map + " by " + jumpmod\functions::namefix(self.name) + "^7.");
 
         wait 1;
 
