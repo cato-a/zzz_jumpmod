@@ -2787,7 +2787,6 @@ cmd_move_freeze() // not a command :D
     self cmd_move_link(); // link
 
     while(isAlive(self) && self.sessionstate == "playing"
-            && isDefined(self.cmdmovepos)
             && !(self meleeButtonPressed()
             || self useButtonPressed()
             || self attackButtonPressed()
