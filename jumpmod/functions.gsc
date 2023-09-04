@@ -64,8 +64,8 @@ _newspawn(position, angles, recursive) // 2022 code: threads for recursive?
 _canspawnat(position) // 2022 code: this fixes bug introduced by original coder, like 12+ years ago...
 {
     position = position + (-32, -32, 0);
-    for(x = 0; x < 64; x++) {
-        for(y = 0; y < 64; y++) {
+    for(x = 0; x < 32; x++) {
+        for(y = 0; y < 32; y++) {
             trace = bulletTrace(position + (x, y, 0), position + (x, y, 72), true, self);
 
             if(trace["fraction"] != 1)

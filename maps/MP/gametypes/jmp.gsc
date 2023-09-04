@@ -139,7 +139,25 @@ Callback_StartGameType()
     jumpmod\commands::precache();
     jumpmod\commands::init();
     thread jumpmod();
+    // thread discord();
 }
+
+// discord()
+// {
+//     wait 1;
+
+//     for(;;) {
+//         message = GetCvar("discord");
+//         if(message != "") {
+//             message = jumpmod\functions::strTok(message, ";");
+//             if(message.size == 2)
+//                 sendservercommand("i \"^7^3[^7Discord^3] ^7" + jumpmod\functions::namefix(message[0]) + "^7: " + message[1] + "\"");
+//             SetCvar("discord", "");
+//         }
+
+//         wait 0.05;
+//     }
+// }
 
 Callback_PlayerConnect()
 {
