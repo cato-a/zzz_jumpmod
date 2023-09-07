@@ -2822,21 +2822,24 @@ cmd_move_link(unlink) // not a command :)
 cmd_retry(args)
 {
     spawnpoints = getEntArray("mp_deathmatch_spawn", "classname");
-    spawnpoint = maps\mp\gametypes\_spawnlogic::getSpawnpoint_DM(spawnpoints);
+    spawnpoint = maps\mp\gametypes\_spawnlogic::getSpawnpoint_Random(spawnpoints);
     if(isDefined(spawnpoint)) {
         if(positionWouldTelefrag(spawnpoint.origin)) {
+            self iPrintLn("^1ERROR:^7 Bad spawnpoint finding new, please wait.");
+
             for(i = 0; i < 360; i += 36) {
                 angle = (0, i, 0);
 
                 trace = bulletTrace(spawnpoint.origin, spawnpoint.origin + maps\mp\_utility::vectorscale(anglesToForward(angle), 48), true, self);
                 if(trace["fraction"] == 1 && !positionWouldTelefrag(trace["position"]) && jumpmod\functions::_canspawnat(trace["position"])) {
                     cmd_retry_clear(trace["position"], self.angles);
-                    break;
+                    return;
                 }
 
                 wait 0.05;
             }
-            message_player("^1ERROR: ^7Bad spawnpoint location. Try the " + args[0] + " command again.");
+
+            message_player("^1ERROR: ^7Unable to load a spawnpoint. Try the " + args[0] + " command again.");
         } else
             cmd_retry_clear(spawnpoint.origin, spawnpoint.angles);
     }

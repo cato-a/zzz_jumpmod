@@ -19,55 +19,49 @@ namefix(playername)
     return cleanedname;
 }
 
-_spawn(spawnpointname) // Renamed from _oldspawn() in zzfun_supplement
+_newspawn(spawnpoint, recursive)
 {
-    spawnpoints = getEntArray(spawnpointname, "classname");
-    spawnpoint = maps\mp\gametypes\_spawnlogic::getSpawnpoint_Random(spawnpoints);
-
-    if(isDefined(spawnpoint)) {
-        if(positionWouldTelefrag(spawnpoint.origin)) {
-            self iPrintLn("^1ERROR:^7 Bad spawnpoint finding new, please wait.");
-            self _newspawn(spawnpoint.origin, spawnpoint.angles);
-        } else
-            self spawn(spawnpoint.origin, spawnpoint.angles);
-    } else
-        maps\mp\_utility::error("NO " + spawnpointname + " SPAWNPOINTS IN MAP");
-}
-
-_newspawn(position, angles, recursive) // 2022 code: threads for recursive?
-{
-    newspawn = [];
+    recursive = (bool)isDefined(recursive);
+    if(!recursive)
+        newspawn = [];
 
     for(i = 0; i < 360; i += 36) {
         angle = (0, i, 0);
 
-        trace = bulletTrace(position, position + maps\mp\_utility::vectorscale(anglesToForward(angle), 48), true, self);
+        trace = bulletTrace(spawnpoint.origin, spawnpoint.origin + maps\mp\_utility::vectorscale(anglesToForward(angle), 48), true, self);
         if(trace["fraction"] == 1 && !positionWouldTelefrag(trace["position"]) && _canspawnat(trace["position"])) {
-            self spawn(trace["position"], angles);
-            return trace["position"];
+            _spawnpoint = spawnStruct();
+            _spawnpoint.origin = trace["position"];
+            _spawnpoint.angles = angle;
+            return _spawnpoint;
         }
 
-        newspawn[newspawn.size] = trace["position"];
+        if(!recursive) {
+            _spawnpoint = spawnStruct();
+            _spawnpoint.origin = trace["position"];
+            _spawnpoint.angles = angle;
+            newspawn[newspawn.size] = _spawnpoint;
+        }
+
         wait 0.05;
     }
 
-    if(!isDefined(recursive)) {
-        for(j = 0; j < newspawn.size; j++) {
-            if(isDefined(newspawn[j]))
-                _newspawn(newspawn[j], angles, true);
-        }
+    if(!recursive) {
+        self iPrintLn("^1ERROR:^7 Bad spawnpoint still finding new, please wait.");
+        for(j = 0; j < newspawn.size; j++)
+            _newspawn(newspawn[j], true);
 
-        return position; // giving up, push anyways
+        self iPrintLn("^1ERROR:^7 Bad spawnpoint pushing anyways...");
+        return spawnpoint; // giving up, push anyways
     }
 }
 
-_canspawnat(position) // 2022 code: this fixes bug introduced by original coder, like 12+ years ago...
+_canspawnat(position)
 {
-    position = position + (-32, -32, 0);
+    position = position + (-16, -16, 0); // (-32, -32, 0)
     for(x = 0; x < 32; x++) {
         for(y = 0; y < 32; y++) {
             trace = bulletTrace(position + (x, y, 0), position + (x, y, 72), true, self);
-
             if(trace["fraction"] != 1)
                 return false;
         }
@@ -390,7 +384,9 @@ addBotClients()
     }
 
     for(i = 0; i < iNumBots; i++) {
-        addtestclient();
+        bot = addtestclient();
+        if(isPlayer(bot))
+            bot.isbot = true;
         wait 0.25;
     }
 }

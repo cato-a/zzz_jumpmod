@@ -16,6 +16,7 @@ main()
     level.gametype = tolower(getCvar("g_gametype"));
     level.averageframes = GetCvarInt("sv_fps");
     level.frametime = 1.0 / (float)level.averageframes; // Cheese :)
+    level.developer = (bool)GetCvarInt("developer");
 
     /* Here we setup the maps and start loop with fixes
         - level.timelimit overrides
@@ -227,6 +228,14 @@ Callback_PlayerConnect()
 
     level endon("intermission");
 
+    teams[0] = "allies";
+    teams[1] = "axis";
+
+    if(level.developer && isDefined(self.isbot)) {
+        self.pers["team"] = teams[randomInt(teams.size)];
+        spawnPlayer(); return;
+    }
+
     self.pers["team"] = "spectator";
     spawnSpectator();
 
@@ -236,12 +245,8 @@ Callback_PlayerConnect()
 
     self setClientCvar("cg_objectiveText", "Complete the jump map from start to end before the time runs out.\nDouble tap ^1MELEE ^7key to save position.\nDouble tap ^1USE ^7key to load saved positions.");
 
-    teams[0] = "allies";
-    teams[1] = "axis";
-
-    if(isDefined(level.acceptvotes))
-        if(isDefined(level.votetitle))
-            jumpmod\commands::message_player(level.votetitle);
+    if(isDefined(level.acceptvotes) && isDefined(level.votetitle))
+        jumpmod\commands::message_player(level.votetitle);
 
     for(;;) {
         self waittill("menuresponse", menu, response);
@@ -508,7 +513,8 @@ jumpmod()
 
     thread endMap();
     thread jumpmod\miscmod::_timerStuck();
-    thread jumpmod\functions::addBotClients();
+    if(level.developer)
+        thread jumpmod\functions::addBotClients();
 
     level.bounceon = (bool)(getCvar("x_cl_bounce") == "1");
     g_speed = 190;
@@ -592,13 +598,19 @@ spawnPlayer()
         jumpmod\commands::cmd_replay_cleanup();
 
     spawnpointname = "mp_deathmatch_spawn";
-    jumpmod\functions::_spawn(spawnpointname);
+    spawnpoints = getEntArray(spawnpointname, "classname");
+    spawnpoint = maps\mp\gametypes\_spawnlogic::getSpawnpoint_Random(spawnpoints);
+    if(isDefined(spawnpoint)) {
+        if(positionWouldTelefrag(spawnpoint.origin)) {
+            self iPrintLn("^1ERROR:^7 Bad spawnpoint finding new, please wait.");
+            spawnpoint = self jumpmod\functions::_newspawn(spawnpoint);
+        }
 
-    if(isDefined(self.pers["team"]))
-        self.statusicon = game["statusicon_" + game[self.pers["team"]]];
-    else
-        self.statusicon = "gfx/hud/hud@objective_bel.tga";
+        self spawn(spawnpoint.origin, spawnpoint.angles);
+    } else
+        maps\mp\_utility::error("NO " + spawnpointname + " SPAWNPOINTS IN MAP");
 
+    self.statusicon = game["statusicon_" + game[self.pers["team"]]];
     self.maxhealth = 100;
     self.health = self.maxhealth;
 
@@ -617,7 +629,7 @@ spawnPlayer()
     }
 }
 
-spawnSpectator(origin, angles)
+spawnSpectator()
 {
     self notify("spawned");
 
@@ -630,9 +642,7 @@ spawnSpectator(origin, angles)
     if(isDefined(self.replay))
         jumpmod\commands::cmd_replay_cleanup();
 
-    if(self.pers["team"] == "spectator")
-        self.statusicon = "gfx/hud/hud@objective_bel.tga";
-
+    self.statusicon = "gfx/hud/hud@objective_bel.tga";
     spawnpointname = "mp_deathmatch_intermission";
     spawnpoints = getEntArray(spawnpointname, "classname");
     spawnpoint = maps\mp\gametypes\_spawnlogic::getSpawnpoint_Random(spawnpoints);
