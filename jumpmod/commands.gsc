@@ -2787,21 +2787,20 @@ cmd_move_freeze() // not a command :D
     self cmd_move_link(); // link
 
     while(isAlive(self) && self.sessionstate == "playing"
-            && !(self meleeButtonPressed()
-            || self useButtonPressed()
-            || self attackButtonPressed()
-            || self backButtonPressed()
-            || self forwardButtonPressed()
-            || self leftButtonPressed()
-            || self rightButtonPressed()
-            || self moveupButtonPressed()
-            || self movedownButtonPressed()
-            || self aimButtonPressed()
-            || self reloadButtonPressed()
-            || self leanLeftButtonPressed()
-            || self leanRightButtonPressed())) {
+        && !(self meleeButtonPressed()
+        || self useButtonPressed()
+        || self attackButtonPressed()
+        || self backButtonPressed()
+        || self forwardButtonPressed()
+        || self leftButtonPressed()
+        || self rightButtonPressed()
+        || self moveupButtonPressed()
+        || self movedownButtonPressed()
+        || self aimButtonPressed()
+        || self reloadButtonPressed()
+        || self leanLeftButtonPressed()
+        || self leanRightButtonPressed()))
         wait 0.05;
-    }
 
     self cmd_move_link(true); // unlink
     self.cmdmovepos = undefined;
