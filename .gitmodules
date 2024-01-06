@@ -1,3 +1,4 @@
 [submodule "json2gsc"]
 	path = json2gsc
 	url = https://github.com/thecheeseman/json2gsc
+    ignore = untracked
