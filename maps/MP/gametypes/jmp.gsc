@@ -37,6 +37,12 @@ main()
     level.healthqueue = [];
     level.healthqueuecurrent = 0;
     level.bans = [];
+    level.maxmessages = GetCvarInt("scr_mm_chat_maxmessages");
+    if(level.maxmessages > 0) {
+        level.penaltytime = GetCvarInt("scr_mm_chat_penaltytime");
+        if(level.penaltytime == 0)
+            level.penaltytime = 2;
+    }
 
     spawnpointname = "mp_deathmatch_spawn";
     spawnpoints = getEntArray(spawnpointname, "classname");
@@ -215,7 +221,7 @@ Callback_PlayerConnect()
     self.save_array_max_length = 52;
     self.load_index = 0;
 
-    self.pers["mm_chattimer"] = getTime();
+    self.pers["mm_chattimer"] = 0;
     self.pers["mm_chatmessages"] = 1;
 
     thread jumpmod\commands::_checkLoggedIn();

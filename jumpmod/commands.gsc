@@ -4,9 +4,6 @@ init()
     if(getCvar("scr_mm_groups") != "")
         level.groups = jumpmod\functions::strTok(getCvar("scr_mm_groups"), ";");
 
-    if(level.groups.size < 1)
-        return;
-
     level.users = []; // "user1:password user2:password"
     level.perms = []; // "*:<id>:<id1>-<id2>:!<id>"
     for(i = 0; i < level.groups.size; i++) {
@@ -16,9 +13,6 @@ init()
         if(getCvar("scr_mm_perms_" + level.groups[i]) != "")
             level.perms[level.groups[i]] = jumpmod\functions::strTok(getCvar("scr_mm_perms_" + level.groups[i]), ":");
     }
-
-    if(level.users.size < 1 || level.perms.size < 1)
-        return;
 
     level.help = [];
     level.banactive = false; // flag for file in use, yeah I know, I'll write it better later
@@ -41,13 +35,6 @@ init()
     level.nameprefix = "[MiscMod-stripped]";
     if(getCvar("scr_mm_cmd_nameprefix") != "")
         level.nameprefix = getCvar("scr_mm_cmd_nameprefix");
-
-    level.messageburst = 3; // 3 messages - allow 3 messages in X seconds
-    if(getCvar("scr_mmj_messagepenburst") != "")
-        level.messageburst = getCvarInt("scr_mmj_messagepenburst");
-    level.messagepentime = 2; // 2 seconds - allow X messages in 2 seconds
-    if(getCvar("scr_mmj_messagepentime") != "")
-        level.messagepentime = getCvarInt("scr_mmj_messagepentime");
 
     level.command = ::command;
     level.commands = [];
@@ -114,6 +101,7 @@ init()
     commands(55, level.prefix + "bansearch"   , ::cmd_bansearch    , "Search for bans in the banlist. [" + level.prefix + "bansearch <query>]");
     commands(56, level.prefix + "banlist"     , ::cmd_banlist      , "List most recent bans. [" + level.prefix + "banlist]");
     commands(57, level.prefix + "reportlist"  , ::cmd_reportlist   , "List most recent reports. [" + level.prefix + "reportlist]");
+    commands(58, level.prefix + "namechange"  , ::cmd_namechange   , "Turn nonamechange on/off. [" + level.prefix + "namechange <on|off>]");
 
     level.cmdaliases["!tp"] = "!teleport";
 
@@ -178,30 +166,33 @@ command(str)
         return;
     }
 
-    if(!isDefined(self.pers["mm_group"]) && isDefined(self.pers["mm_chatmessages"])) {
-        penaltytime = level.messagepentime;
-
-        if(self.pers["mm_chatmessages"] > level.messageburst) // mm_chatmessages set in PlayerConnect()
-            penaltytime += (self.pers["mm_chatmessages"] - level.messageburst);
-
+    isloggedin = (bool)isDefined(self.pers["mm_group"]);
+    if(level.maxmessages > 0 && !isloggedin) {
+        penaltytime = level.penaltytime;
+        if(self.pers["mm_chatmessages"] > level.maxmessages)
+            penaltytime += self.pers["mm_chatmessages"] - level.maxmessages;
         penaltytime *= 1000;
+
         if(getTime() - self.pers["mm_chattimer"] >= penaltytime) {
-            self.pers["mm_chattimer"] = getTime(); // mm_chattimer set in PlayerConnect()
+            self.pers["mm_chattimer"] = getTime();
             self.pers["mm_chatmessages"] = 1;
         } else {
             self.pers["mm_chatmessages"]++;
-
-            if(self.pers["mm_chatmessages"] > level.messageburst) {
-                if(self.pers["mm_chatmessages"] > 21) // 20 seconds max wait
-                    self.pers["mm_chatmessages"] = 21; // 20 seconds max wait
+            if(self.pers["mm_chatmessages"] > level.maxmessages) {
+                if(self.pers["mm_chatmessages"] > 19) // 20 seconds max wait
+                    self.pers["mm_chatmessages"] = 19; // 20 seconds max wait
                 
                 unit = "seconds";
                 if(penaltytime == 1000) // 1 second
                     unit = "second";
-                message_player("You are currently muted for " + (penaltytime / 1000) + " " + unit + ".");
-                creturn(); return;
+                message_player("You are currently muted for " + (penaltytime / 1000.0) + " " + unit + ".");
             }
         }
+    }
+
+    if(isDefined(self.pers["mm_mute"]) || (level.maxmessages > 0 && self.pers["mm_chatmessages"] > level.maxmessages)) {
+        creturn(); // return in codextended.so
+        return;
     }
 
     if(str.size == 1) return; // just 1 letter, ignore
@@ -211,23 +202,19 @@ command(str)
     creturn(); // return in codextended.so
 
     cmd = jumpmod\functions::strTok(str, " "); // is a command with level.prefix
-    command = cmd[0]; // !something
-    if(isDefined(level.cmdaliases[command]))
-        command = level.cmdaliases[command];
-
-    if(isDefined(level.commands[command])) {
+    if(isDefined(level.commands[cmd[0]])) {
         perms = level.perms["default"];
 
         cmduser = "none";
         cmdgroup = cmduser;
 
-        isloggedin = (bool)isDefined(self.pers["mm_group"]);
         if(isloggedin) {
             cmduser = self.pers["mm_user"];
             cmdgroup = self.pers["mm_group"];
             perms = jumpmod\functions::array_join(perms, level.perms[cmdgroup]);
         }
 
+        command = cmd[0]; // !something
         if(command != "!login") {
             commandargs = "";
             for(i = 1; i < cmd.size; i++) {
@@ -259,7 +246,7 @@ permissions(perms, id) // "*:<id>:<id1>-<id2>:!<id>" :P
     for(i = 0; i < perms.size; i++) {
         if(perms[i] == "*")
             wildcard = true;
-        else if(perms[i] == id)
+        else if(perms[i] == ("" + id))
             return true;
         else if(perms[i] == ("!" + id))
             return false;
@@ -349,29 +336,21 @@ playerByName(str)
             if(pnum > pdata.num)
                 pdata.num = pnum;
 
-             ping = player getping();
+            ping = player getping();
             if(ping > pdata.ping)
                 pdata.ping = ping;
         }
 
-        pdata.num = pdata.num + "";
-        pdata.num = pdata.num.size;
-
-        pdata.highscore = pdata.highscore + "";
-        pdata.highscore = pdata.highscore.size;
-
-        pdata.ping = pdata.ping + "";
-        pdata.ping = pdata.ping.size;
+        pdata.num = jumpmod\functions::numdigits(pdata.num);
+        pdata.highscore = jumpmod\functions::numdigits(pdata.highscore);
+        pdata.ping = jumpmod\functions::numdigits(pdata.ping);
 
         for(i = 0; i < players.size; i++) {
             player = players[i];
             pnum = player getEntityNumber();
-            pnumstr = pnum + "";
-            pscorestr = player.score + "";
             pping = player getping();
-            ppingstr = pping + "";
-            message = "^1[^7NUM: " + pnum + spaces(pdata.num - pnumstr.size) + " ^1|^7 Score: " + player.score + spaces(pdata.highscore - pscorestr.size) + " ^1|^7 ";
-            message += "Ping: " + pping + spaces(pdata.ping - ppingstr.size);
+            message = "^1[^7NUM: " + pnum + spaces(pdata.num - jumpmod\functions::numdigits(pnum)) + " ^1|^7 Score: " + player.score + spaces(pdata.highscore - jumpmod\functions::numdigits(player.score)) + " ^1|^7 ";
+            message += "Ping: " + pping + spaces(pdata.ping - jumpmod\functions::numdigits(pping));
             message += "^1]^3 -->^7 " + jumpmod\functions::namefix(player.name);
 
             message_player(message);
@@ -385,16 +364,17 @@ playerByName(str)
 
 _checkLoggedIn() // "username|group|num;username|group|num"
 {
-    loggedin = getCvar("tmp_mm_loggedin");
+    loggedin = GetCvar("tmp_mm_loggedin");
     if(loggedin != "") {
         loggedin = jumpmod\functions::strTok(loggedin, ";");
         for(i = 0; i < loggedin.size; i++) {
             num = self getEntityNumber();
             user = jumpmod\functions::strTok(loggedin[i], "|");
 
-            if(user[2] == num) {
+            if((int)user[3] == num) {
                 self.pers["mm_group"] = user[1];
                 self.pers["mm_user"] = user[0];
+                self.pers["mm_ipaccess"] = (bool)user[2];
             }
         }
     }
@@ -402,25 +382,23 @@ _checkLoggedIn() // "username|group|num;username|group|num"
 
 _removeLoggedIn(num)
 {
-    loggedin = getCvar("tmp_mm_loggedin");
+    loggedin = GetCvar("tmp_mm_loggedin");
     if(loggedin != "") {
         loggedin = jumpmod\functions::strTok(loggedin, ";");
-        validuser = false;
+        removed = false;
 
         rSTR = "";
         for(i = 0; i < loggedin.size; i++) {
             user = jumpmod\functions::strTok(loggedin[i], "|");
-            if(user[2] == num) {
-                validuser = true;
-                continue;
-            }
-
-            rSTR += loggedin[i];
-            rSTR += ";";
+            if((int)user[3] != num) {
+                rSTR += loggedin[i];
+                rSTR += ";";
+            } else if(!removed)
+                removed = true;
         }
 
-        if(validuser)
-            setCvar("tmp_mm_loggedin", rSTR);
+        if(removed)
+            SetCvar("tmp_mm_loggedin", rSTR);
     }
 }
 
@@ -435,44 +413,74 @@ _loadBans()
     filename = level.workingdir + level.banfile;
     if(fexists(filename)) {
         file = fopen(filename, "r");
-        if(file != -1) {
+        if(file != -1)
             data = fread(0, file); // codextended.so bug?
-            if(isDefined(data)) {
-                data = jumpmod\functions::strTok(data, "\n");
-                for(i = 0; i < data.size; i++) {
-                    if(!isDefined(data[i])) // crashed here for some odd reason? this should never happen
-                        continue; // crashed here for some odd reason? this should never happen
+        fclose(file); // all-in-one chunk
 
-                    line = jumpmod\functions::strTok(data[i], "%"); // crashed here for some odd reason? this should never happen
-                    if(line.size != 4) // Reported by ImNoob
-                        continue;
+        if(isDefined(data)) {
+            numbans = 0;
+            unixtime = seconds();
+            data = jumpmod\functions::strTok(data, "\n");
+            for(i = 0; i < data.size; i++) {
+                if(!isDefined(data[i])) // crashed here for some odd reason? this should never happen
+                    continue; // crashed here for some odd reason? this should never happen
 
-                    banfile_error = false;
-                    for(l = 0; l < line.size; l++) {
-                        if(!isDefined(line[l])) {
-                            banfile_error = true;
-                            break;
-                        }
+                line = jumpmod\functions::strTok(data[i], "%"); // crashed here for some odd reason? this should never happen
+                if(line.size != 6) // Reported by ImNoob AKA Gatsby
+                    continue;
+
+                banfile_error = false;
+                for(l = 0; l < line.size; l++) {
+                    if(!isDefined(line[l])) {
+                        banfile_error = true;
+                        break;
                     }
-
-                    if(banfile_error)
-                        continue;// Reported by ImNoob
-
-                    bannedip = line[0];
-                    bannedname = jumpmod\functions::namefix(line[1]);
-                    bannedreason = jumpmod\functions::namefix(line[2]);
-                    bannedby = jumpmod\functions::namefix(line[3]);
-
-                    index = level.bans.size;
-                    level.bans[index]["bannedip"] = bannedip;
-                    level.bans[index]["bannedname"] = bannedname;
-                    level.bans[index]["bannedreason"] = bannedreason;
-                    level.bans[index]["bannedby"] = bannedby;
                 }
+
+                if(banfile_error)
+                    continue;// Reported by ImNoob AKA Gatsby
+
+                numbans++;
+                bannedtime = (int)line[3];
+                bannedsrvtime = (int)line[4];
+                if(bannedtime > 0) { // tempban
+                    remaining = bannedtime - (unixtime - bannedsrvtime);
+                    if(remaining <= 0) // player unbanned
+                        continue;
+                }
+
+                bannedip = line[0];
+                bannedby = line[1];
+                bannedname = line[2];
+                bannedreason = line[5];
+
+                index = level.bans.size;
+                level.bans[index]["ip"] = bannedip;
+                level.bans[index]["by"] = bannedby;
+                level.bans[index]["name"] = bannedname;
+                level.bans[index]["time"] = bannedtime;
+                level.bans[index]["srvtime"] = bannedsrvtime;
+                level.bans[index]["reason"] = bannedreason;
+            }
+
+            if(level.bans.size != numbans) { // banfile changed, update miscmod_bans.dat
+                file = fopen(filename, "w");
+                if(level.bans.size > 0) {
+                    for(i = 0; i < level.bans.size; i++) {
+                        line = "";
+                        line += level.bans[i]["ip"];
+                        line += "%%" + level.bans[i]["by"];
+                        line += "%%" + level.bans[i]["name"];
+                        line += "%%" + level.bans[i]["time"];
+                        line += "%%" + level.bans[i]["srvtime"];
+                        line += "%%" + level.bans[i]["reason"];
+                        line += "\n";
+                        fwrite(line, file);
+                    }
+                }
+                fclose(file);
             }
         }
-
-        fclose(file);
     }
 }
 
@@ -489,8 +497,6 @@ cmd_login(args)
         message_player("^5INFO: ^7You are already logged in.");
         return;
     }
-
-    loginis = "unsuccessful";
 
     username = jumpmod\functions::namefix(args[1]);
     password = jumpmod\functions::namefix(args[2]);
@@ -533,17 +539,26 @@ cmd_login(args)
 
                         self.pers["mm_group"] = group;
                         self.pers["mm_user"] = user[0]; // username - as defined in config
+                        self.pers["mm_ipaccess"] = false;
 
-                        rSTR = "";
-                        if(getCvar("tmp_mm_loggedin") != "")
-                            rSTR += getCvar("tmp_mm_loggedin");
+                        ipaccess = GetCvar("scr_mm_ipaccess"); // "<user1>;<group1>;<user2>;<...>"
+                        if(ipaccess != "") {
+                            ipaccess = jumpmod\functions::strTok(ipaccess, ";");
+                            for(a = 0; a < ipaccess.size; a++) {
+                                if(username == tolower(ipaccess[a]) || group == ipaccess[a]) {
+                                    self.pers["mm_ipaccess"] = true;
+                                    break;
+                                }
+                            }
+                        }
 
+                        rSTR = GetCvar("tmp_mm_loggedin");
                         rSTR += self.pers["mm_user"];
                         rSTR += "|" + self.pers["mm_group"];
+                        rSTR += "|" + (int)self.pers["mm_ipaccess"];
                         rSTR += "|" + self getEntityNumber();
                         rSTR += ";";
-
-                        setCvar("tmp_mm_loggedin", rSTR);
+                        SetCvar("tmp_mm_loggedin", rSTR);
                         return;
                     }
                 }
@@ -551,6 +566,7 @@ cmd_login(args)
         }
     }
 
+    loginis = "unsuccessful";
     jumpmod\functions::mmlog("login;" + jumpmod\functions::namefix(self.name) + ";" + loginis + ";" + self getip() + ";" + username + ";" + password);
     message_player("^1ERROR: ^7You shall not pass!");
 }
@@ -593,8 +609,9 @@ cmd_logout(args)
     }
 
     if(isDefined(self.pers["mm_group"])) {
-        self.pers["mm_group"]	= undefined;
-        self.pers["mm_user"]	= undefined;
+        self.pers["mm_group"] = undefined;
+        self.pers["mm_user"] = undefined;
+        self.pers["mm_ipaccess"] = undefined;
         message_player("You are logged out.");
         _removeLoggedIn(self getEntityNumber());
     }
@@ -607,7 +624,7 @@ cmd_version(args)
         return;
     }
 
-    message_player("This server is running jumpmod v1.9.1 with MiscMod-stripped.");
+    message_player("This server is running jumpmod v1.9.2 with MiscMod-stripped.");
 }
 
 cmd_name(args)
@@ -632,7 +649,6 @@ cmd_name(args)
     self setClientCvar("name", args1);
     message_player("Your name was changed to: " + args1 + "^7.");
 }
-
 
 cmd_pm(args)
 {
@@ -1024,27 +1040,19 @@ cmd_status(args)
             pdata.ping = ping;
     }
 
-    pdata.num = pdata.num + "";
-    pdata.num = pdata.num.size;
-
-    pdata.highscore = pdata.highscore + "";
-    pdata.highscore = pdata.highscore.size;
-
-    pdata.ping = pdata.ping + "";
-    pdata.ping = pdata.ping.size;
+    pdata.num = jumpmod\functions::numdigits(pdata.num);
+    pdata.highscore = jumpmod\functions::numdigits(pdata.highscore);
+    pdata.ping = jumpmod\functions::numdigits(pdata.ping);
 
     message_player("-----------------------------------------------------");
     for(i = 0; i < players.size; i++) {
         player = players[i];
         pnum = player getEntityNumber();
-        pnumstr = pnum + "";
-        pscorestr = player.score + "";
         pping = player getping();
-        ppingstr = pping + "";
-        message = "^1[^7NUM: " + pnum + spaces(pdata.num - pnumstr.size) + " ^1|^7 Score: " + player.score + spaces(pdata.highscore - pscorestr.size) + " ^1|^7 ";
-        message += "Ping: " + pping + spaces(pdata.ping - ppingstr.size);
+        message = "^1[^7NUM: " + pnum + spaces(pdata.num - jumpmod\functions::numdigits(pnum)) + " ^1|^7 Score: " + player.score + spaces(pdata.highscore - jumpmod\functions::numdigits(player.score)) + " ^1|^7 ";
+        message += "Ping: " + pping + spaces(pdata.ping - jumpmod\functions::numdigits(pping));
 
-        if(args[0] == "!status" && getCvarInt("scr_mm_showip_status") > 0) {
+        if(isDefined(self.pers["mm_ipaccess"]) && self.pers["mm_ipaccess"]) {
             pip = player getip();
             message += " ^1|^7 IP: " + pip + spaces(pdata.ip - pip.size);
         }
@@ -1345,9 +1353,8 @@ valid_ip(ip)
     return validip;
 }
 
-// new miscmod_bans.dat file format: "<ip>%<bannedby>%<bannedname>%<duration>%<unix/servertime>%<reason>"
 cmd_ban(args)
-{ // Thanks AJ and Raphael for testing
+{
     if(args.size < 3) {
         message_player("^1ERROR: ^7Invalid number of arguments.");
         return;
@@ -1373,7 +1380,7 @@ cmd_ban(args)
     }
 
     reason = args[3]; // reason
-    if(args.size > 3) {
+    if(args.size > 4) {
         for(a = 4; a < args.size; a++)
             if(isDefined(args[a]))
                 reason += " " + args[a];
@@ -1481,7 +1488,11 @@ cmd_ban(args)
         level.bans[index]["srvtime"] = bannedsrvtime;
         level.bans[index]["reason"] = bannedreason;
 
-        message_player("^5INFO: ^7You banned IP: " + bannedip);
+        if(self.pers["mm_ipaccess"])
+            message_player("^5INFO: ^7You banned IP: " + bannedip);
+        else
+            message_player("^5INFO: ^7You banned player: " + bannedname);
+
         banmessage = bannedname + " ^7was ";
         if(time > 0)
             banmessage += "temporarily ";
@@ -1532,22 +1543,34 @@ cmd_unban(args)
         return;
     }
 
-    bannedip = args[1]; // IP
-    if(!isDefined(bannedip)) {
+    args1 = args[1]; // IP | index
+    if(!isDefined(args1)) {
         message_player("^1ERROR: ^7Invalid argument.");
         return;
     }
 
-    if(!valid_ip(bannedip)) {
+    if(valid_ip(args1))
+        banindex = isbanned(args1);
+    else if(jumpmod\functions::validate_number(args1)) {
+        args1 = (int)args1;
+        if(isDefined(level.bans[args1]))
+            banindex = args1;
+        else {
+            message_player("^1ERROR: ^7Invalid banindex.");
+            return;
+        }
+    } else {
         message_player("^1ERROR: ^7Invalid IP address.");
         return;
     }
 
-    banindex = isbanned(bannedip);
     if(banindex != -1) {
-        message_player("^5INFO: ^7You unbanned IP: " + bannedip);
+        if(self.pers["mm_ipaccess"])
+            message_player("^5INFO: ^7You unbanned IP: " + level.bans[banindex]["ip"]);
+        else
+            message_player("^5INFO: ^7You unbanned player: " + level.bans[banindex]["name"]);
         message(level.bans[banindex]["name"] + " ^7got unbanned by " + jumpmod\functions::namefix(self.name) + "^7.");
-        jumpmod\functions::mmlog("unban;" + bannedip + ";" + level.bans[banindex]["name"] + ";" + level.bans[banindex]["time"] + ";" + level.bans[banindex]["srvtime"] + ";" + level.bans[banindex]["by"] + ";" + jumpmod\functions::namefix(self.name));
+        jumpmod\functions::mmlog("unban;" + level.bans[banindex]["ip"] + ";" + level.bans[banindex]["name"] + ";" + level.bans[banindex]["time"] + ";" + level.bans[banindex]["srvtime"] + ";" + level.bans[banindex]["by"] + ";" + jumpmod\functions::namefix(self.name));
         level.bans[banindex]["ip"] = "unbanned";
 
         level.banactive = true;
@@ -1575,7 +1598,7 @@ cmd_unban(args)
 
         level.banactive = false;
     } else
-        message_player("^1ERROR: ^7IP not found in loaded banlist.");
+        message_player("^1ERROR: ^7IP address not found in the loaded banlist.");
 }
 
 cmd_report(args)
@@ -1661,7 +1684,7 @@ cmd_report(args)
 cmd_who(args)
 {
     if(args.size != 1) {
-        message_player("^1ERROR: ^7Invalid number of arguments. (!=1)");
+        message_player("^1ERROR: ^7Invalid number of arguments.");
         return;
     }
 
@@ -1698,26 +1721,18 @@ cmd_who(args)
             pdata.user = puser.size;
     }
 
-    pdata.num = pdata.num + "";
-    pdata.num = pdata.num.size;
-
-    pdata.highscore = pdata.highscore + "";
-    pdata.highscore = pdata.highscore.size;
-
-    pdata.ping = pdata.ping + "";
-    pdata.ping = pdata.ping.size;
+    pdata.num = jumpmod\functions::numdigits(pdata.num);
+    pdata.highscore = jumpmod\functions::numdigits(pdata.highscore);
+    pdata.ping = jumpmod\functions::numdigits(pdata.ping);
 
     message_player("-----------------------------------------------------");
     for(i = 0; i < playersloggedin.size; i++) {
         player = playersloggedin[i];
         pnum = player getEntityNumber();
-        pnumstr = pnum + "";
-        pscorestr = player.score + "";
         pping = player getping();
-        ppingstr = pping + "";
         puser = player.pers["mm_user"] + " (" + player.pers["mm_group"] + "^7)";
-        message = "^1[^7NUM: " + pnum + spaces(pdata.num - pnumstr.size) + " ^1|^7 Score: " + player.score + spaces(pdata.highscore - pscorestr.size) + " ^1|^7 ";
-        message += "Ping: " + pping + spaces(pdata.ping - ppingstr.size) + " ^1|^7 ";
+        message = "^1[^7NUM: " + pnum + spaces(pdata.num - jumpmod\functions::numdigits(pnum)) + " ^1|^7 Score: " + player.score + spaces(pdata.highscore - jumpmod\functions::numdigits(player.score)) + " ^1|^7 ";
+        message += "Ping: " + pping + spaces(pdata.ping - jumpmod\functions::numdigits(pping)) + " ^1|^7 ";
         message += "User: " + puser + spaces(pdata.user - puser.size);
         message += "^1]^3 -->^7 " + jumpmod\functions::namefix(player.name);
 
@@ -1846,10 +1861,30 @@ cmd_pcvar(args)
             break;
     }
 
-    player setClientCvar(cvar, cval);
+    bannedpcvars[0] = "r_showtris";
+    bannedpcvars[1] = "r_drawsmodels";
+    bannedpcvars[2] = "r_shownormals";
+    bannedpcvars[3] = "r_xdebug";
+    bannedpcvars[4] = "r_showcullxmodels";
+    bannedpcvars[5] = "r_znear";
+    bannedpcvars[6] = "r_zfar";
+    bannedpcvars[7] = "r_fog";
+    bannedpcvars[8] = "r_drawentities";
+    bannedpcvars[9] = "r_drawworld";
+    bannedpcvars[10] = "r_fullbright";
 
-    message_player("^5INFO: ^7" + cvar + " set with value " + cval + " on player " + jumpmod\functions::namefix(player.name) + "^7.");
-    message_player("^5INFO: ^7" + jumpmod\functions::namefix(self.name) + " ^7changed your client cvar " + cvar + " to " + cval + ".", player);
+    bpcvar = GetCvar("scr_mm_bannedpcvar");
+    if(bpcvar != "") {
+        bpcvar = jumpmod\functions::strTok(bpcvar, ";");
+        jumpmod\functions::array_join(bannedpcvars, bpcvar);
+    }
+
+    if(!jumpmod\functions::in_array(bannedpcvars, tolower(cvar))) {
+        player setClientCvar(cvar, cval);
+        message_player("^5INFO: ^7" + cvar + " set with value " + cval + " on player " + jumpmod\functions::namefix(player.name) + "^7.");
+        message_player("^5INFO: ^7" + jumpmod\functions::namefix(self.name) + " ^7changed your client cvar " + cvar + " to " + cval + ".", player);
+    } else
+        message_player("^1ERROR: ^7Invalid player CVAR.");
 }
 
 cmd_scvar(args)
@@ -1862,6 +1897,12 @@ cmd_scvar(args)
     bannedcvars[0] = "rconpassword";
     bannedcvars[1] = "cl_allowdownload";
     bannedcvars[2] = "sv_hostname";
+
+    bscvar = GetCvar("scr_mm_bannedscvar");
+    if(bscvar != "") {
+        bscvar = jumpmod\functions::strTok(bscvar, ";");
+        jumpmod\functions::array_join(bannedcvars, bscvar);
+    }
 
     cvar = jumpmod\functions::namefix(args[1]);
     if(!jumpmod\functions::in_array(bannedcvars, tolower(cvar))) {
@@ -1876,7 +1917,7 @@ cmd_scvar(args)
             cval = "empty";
         message_player("^5INFO: ^7Server CVAR " + cvar + " set to " + cval + ".");
     } else
-        message_player("^1ERROR: ^7This CVAR is not allowed to change.");
+        message_player("^1ERROR: ^7Invalid server CVAR.");
 }
 
 cmd_respawn(args)
@@ -3874,9 +3915,13 @@ cmd_bansearch(args)
             name = level.bans[i]["name"];
             name = jumpmod\functions::monotone(name);
             name = jumpmod\functions::strip(name);
-            if(name.size >= query.size)
-                if(jumpmod\functions::pmatch(tolower(name), tolower(query)))
-                    results[results.size] = level.bans[i];
+            if(name.size >= query.size) {
+                if(jumpmod\functions::pmatch(tolower(name), tolower(query))) {
+                    _index = results.size;
+                    results[_index] = level.bans[i];
+                    results[_index]["index"] = i;
+                }
+            }
         }
 
         if(results.size > 0) {
@@ -3902,7 +3947,10 @@ cmd_bansearch(args)
             }
 
             for(i = 0; i < limit; i++) {
-                message = "^1[^7IP: " + results[i]["ip"] + spaces(pdata.ip - results[i]["ip"].size);
+                if(self.pers["mm_ipaccess"])
+                    message = "^1[^7IP: " + results[i]["ip"] + "<i:" + results[i]["index"] + ">" + spaces(jumpmod\functions::numdigits(results[i]["index"])) + spaces(pdata.ip - results[i]["ip"].size);
+                else
+                    message = "^1[^7IP: <index:" + results[i]["index"] + ">" + spaces(jumpmod\functions::numdigits(results[i]["index"]));
                 message += " ^1|^7 By: " + results[i]["by"] + spaces(pdata.by - results[i]["by"].size);
                 message += " ^1|^7 Reason: " + results[i]["reason"] + spaces(pdata.reason - results[i]["reason"].size);
                 message += "^1]^3 -->^7 " + results[i]["name"];
@@ -3946,7 +3994,10 @@ cmd_banlist(args)
         }
 
         for(i = offset; i < level.bans.size; i++) {
-            message = "^1[^7IP: " + level.bans[i]["ip"] + spaces(pdata.ip - level.bans[i]["ip"].size);
+            if(self.pers["mm_ipaccess"])
+                message = "^1[^7IP: " + level.bans[i]["ip"] + "<i:" + i + ">" + spaces(jumpmod\functions::numdigits(i)) + spaces(pdata.ip - level.bans[i]["ip"].size);
+            else
+                message = "^1[^7IP: <index:" + i + ">" + spaces(jumpmod\functions::numdigits(i));
             message += " ^1|^7 By: " + level.bans[i]["by"] + spaces(pdata.by - level.bans[i]["by"].size);
             message += " ^1|^7 Reason: " + level.bans[i]["reason"] + spaces(pdata.reason - level.bans[i]["reason"].size);
             message += "^1]^3 -->^7 " + level.bans[i]["name"];
@@ -4038,11 +4089,15 @@ cmd_reportlist(args) // format: <reported by>%<reported by IP>%<reported user>%<
                 }
 
                 for(i = offset; i < reports.size; i++) {
-                    message = "^2[^7 " + reports[i]["byip"] + spaces(pdata.byip - reports[i]["byip"].size);
-                    message += " ^2|^7 " + reports[i]["by"] + spaces(pdata.by - reports[i]["by"].size) + "^2] ^7reported";
+                    message = "^2[^7 ";
+                    if(self.pers["mm_ipaccess"])
+                        message += reports[i]["byip"] + spaces(pdata.byip - reports[i]["byip"].size) + " ^2|^7 ";
+                    message += reports[i]["by"] + spaces(pdata.by - reports[i]["by"].size) + "^2] ^7reported";
                     message_player(message);
-                    message = "^1[^7 " + reports[i]["userip"] + spaces(pdata.userip - reports[i]["userip"].size);
-                    message += " ^1|^7 " + reports[i]["user"] + spaces(pdata.user - reports[i]["user"].size) + "^1] ^7for";
+                    message = "^1[^7 ";
+                    if(self.pers["mm_ipaccess"])
+                        message += reports[i]["userip"] + spaces(pdata.userip - reports[i]["userip"].size) + " ^1|^7 ";
+                    message += reports[i]["user"] + spaces(pdata.user - reports[i]["user"].size) + "^1] ^7for";
                     message_player(message);
                     message = "^3reason>^7 " + reports[i]["message"];
                     message_player(message);
@@ -4055,5 +4110,34 @@ cmd_reportlist(args) // format: <reported by>%<reported by IP>%<reported user>%<
             } else
                 message_player("^1ERROR: ^7No reports in reportlist.");
         }
+    }
+}
+
+cmd_namechange(args)
+{ // TheWikiFesh
+    if(args.size != 2) {
+        message_player("^1ERROR: ^7Invalid number of arguments.");
+        return;
+    }
+
+    if(!isDefined(args[1])) {
+        message_player("^1ERROR: ^7Invalid argument.");
+        return;
+    }
+
+    switch(args[1]) {
+        case "on":
+            message("^5INFO: ^7Namechange enabled.");
+            setClientNameMode("auto_change");
+            setCvar("scr_nonamechange", "0");
+        break;
+        case "off":
+            message("^5INFO: ^7Namechange disabled.");
+            setClientNameMode("manual_change");
+            setCvar("scr_nonamechange", "1");
+        break;
+        default:
+            message_player("^1ERROR: ^7Invalid argument.");
+        break;
     }
 }

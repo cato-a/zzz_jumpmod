@@ -427,3 +427,8 @@ PlaySoundAtLocation(sound, location, iTime)
     org delete();
     return;
 }
+
+numdigits(num)
+{
+    return (num + "").size;
+}
