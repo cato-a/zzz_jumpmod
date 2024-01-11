@@ -126,7 +126,10 @@ Callback_StartGameType()
     maps\mp\gametypes\_teams::restrictPlacedWeapons();
     maps\mp\gametypes\_teams::scoreboard();
 
-    setClientNameMode("auto_change");
+    if(GetCvar("scr_nonamechange") == "1")
+        setClientNameMode("manual_change");
+    else
+        setClientNameMode("auto_change");
 
     game["statusicon_american"]   = "gfx/hud/headicon@allies.tga";
     game["statusicon_british"]    = "gfx/hud/headicon@allies.tga";
