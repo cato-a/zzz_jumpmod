@@ -190,7 +190,7 @@ command(str)
         }
     }
 
-    if(isDefined(self.pers["mm_mute"]) || (level.maxmessages > 0 && self.pers["mm_chatmessages"] > level.maxmessages)) {
+    if(level.maxmessages > 0 && self.pers["mm_chatmessages"] > level.maxmessages) {
         creturn(); // return in codextended.so
         return;
     }
