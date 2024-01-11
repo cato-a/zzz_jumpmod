@@ -54,19 +54,6 @@ init()
     }
 }
 
-// init_jmp()
-// { // Cheese
-// 	level.mapdifficulty = getcvar( "scr_map_difficulty" );
-
-// 	precacheString( &"easy" );
-// 	precacheString( &"medium" );
-// 	precacheString( &"hard" );
-// 	precacheString( &"expert" );
-// 	precacheString( &"unknown" );
-// 	precacheString( &"all difficulties" );
-// 	//precacheString( &"Map Difficulty:" );
-// }
-
 mapvote()
 {
     if(!level.mapvote)
@@ -239,8 +226,7 @@ runMapVote()
         level.mapcandidate[i]["votes"] = 0;
         if(level.fmgametype == "jmp" && isDefined(level.difficulty[randomMapRotation[i]["map"]])) // TODO improve
             level.mapcandidate[i]["difficulty"] = level.difficulty[randomMapRotation[i]["map"]];
-            //level.mapcandidate[i]["difficulty"] = get_map_difficulty( randomMapRotation[ i ][ "map" ] );
-            
+
         if((level.mapvotereplay || level.mapvoterandom) && i > 2) break;
     }
   
@@ -554,201 +540,73 @@ getGametypeName(gt)
     return gtname;
 }
 
-// get_map_difficulty(mapname) {
-//     return maps\MP\gametypes\jmp::mapdifficulty(mapname);
-// }
-
-// get_map_difficulty( map ) { // Cheese
-
-// 	switch ( map ) {
-// 		// easy
-// 		case "cj_cow":
-// 		case "cj_hallwayofdoom":
-// 		case "cp_easy_jump":
-// 		case "ct_aztec":
-// 		case "dan_jumpv3":
-// 		case "dv_mr_yoshi":
-// 		case "fm_squishydeath_easy":
-// 		case "jm_crispy":
-// 		case "jm_destov1":
-// 		case "jm_hollywood":
-// 		case "jm_infiniti":
-// 		case "jm_motion_light":
-// 		case "jm_rikku":
-// 		case "jm_tools":
-// 		case "mazeofdeath_easy":
-// 		case "mp_jump":
-// 		case "nm_castle":
-// 		case "nm_jump":
-// 		case "nm_race":
-// 		case "nm_tower":
-// 		case "nm_toybox_easy":
-// 		case "nm_treehouse":
-// 		case "peds_pace":
-// 		case "railyard_jump_light":
-// 		case "svb_hallway":
-// 		case "vik_jump":
-// 		case "zaitroofs":
-// 			return "easy";
-
-// 		// medium
-// 		case "ch_space":
-// 		case "cj_wolfjump":
-// 		case "double_vision":
-// 		case "groms_skatepark":
-// 		case "jm_bounce":
-// 		case "jm_ghoti":
-// 		case "jm_motion_pro":
-// 		case "jm_skys":
-// 		case "jm_speed":
-// 		case "jm_towering_inferno":
-// 		case "jt_dunno":
-// 		case "mazeofdeath_hard":
-// 		case "mp_bolonga":
-// 		case "nev_jumpfacility":
-// 		case "nev_namedspace":
-// 		case "nm_mansion":
-// 		case "nm_portal":
-// 		case "nm_toybox_hard":
-// 		case "nm_trap":
-// 		case "peds_palace":
-// 		case "peds_parkour":
-// 		case "son-of-bitch":
-// 		case "svb_darkblade":
-// 		case "wacked":
-// 		case "zaittower2":
-// 		case "jm_alienattack":
-// 			return "med";
-
-// 		// hard
-// 		case "bitch":
-// 		case "ch_quickie":
-// 		case "fm_squishydeath_hard":
-// 		case "funjump":
-// 		case "hardjump":
-// 		case "jm_canonjump":
-// 		case "jm_castle":
-// 		case "jm_factory":
-// 		case "jm_fear":
-// 		case "jm_foundry":
-// 		case "jm_gap":
-// 		case "jm_lockover":
-// 		case "jm_maniacmansion":
-// 		case "jumping-falls":
-// 		case "kn_angry":
-// 		case "krime_pyramid":
-// 		case "mazeofdeath_vhard":
-// 		case "nev_codered":
-// 		case "starship":
-// 		case "svt_xmas_v2":
-// 			return "hard";
-
-// 		// expert
-// 		case "cp_sirens_call":
-// 		case "nev_templeofposeidonv2":
-// 		case "railyard_jump_ultra":
-// 			return "expert";
-
-// 		// easy/hard
-// 		case "svb_marathon":
-// 			return "easy/hard";
-
-// 		// all skill levels
-// 		case "svb_rage":
-// 		case "ultra_gap_training":
-// 			return "all";
-
-// 		default:
-// 		break;
-// 	}
-    
-// 	var = level.mapdifficulty;
-// 	if ( var != "" ) {
-// 		tmp = jumpmod\functions::strTok( var, ";" );
-        
-// 		for ( i = 0; i < tmp.size; i++ ) {
-// 			info = jumpmod\functions::strTok( tmp[ i ], "," );
-// 			if ( info.size != 2 )
-// 				continue;
-            
-// 			name = info[ 0 ];
-// 			difficulty = info[ 1 ];
-            
-// 			if ( name == map )
-// 				return difficulty;
-// 		}
-// 	}
-
-// 	return "unknown";
-// }
-
 set_map_difficulties() { // Cheese
-    /*level.map_difficulty = newHudElem();
-    level.map_difficulty.archived = false;
-    level.map_difficulty.x = 474;
-    level.map_difficulty.y = level.mapvotehudoffset + 56;
-    level.map_difficulty.sort = 9998;
-    level.map_difficulty.fontscale = 1;
-    level.map_difficulty setText( &"Map Difficulty:" );*/
+    // level.map_difficulty = newHudElem();
+    // level.map_difficulty.archived = false;
+    // level.map_difficulty.x = 474;
+    // level.map_difficulty.y = level.mapvotehudoffset + 56;
+    // level.map_difficulty.sort = 9998;
+    // level.map_difficulty.fontscale = 1;
+    // level.map_difficulty setText(&"Map Difficulty:");
 
     level.mapdifficulties = [];
     
-    for ( i = 0; i < 5; i++ ) {
+    for (i = 0; i < 5; i++) {
         tmp = newHudElem();
         tmp.archived = false;
         tmp.x = 474;
-        tmp.y = level.mapvotehudoffset + 69 + ( 16 * i );
+        tmp.y = level.mapvotehudoffset + 69 + (16 * i);
         tmp.sort = 9998;
         
-        info = level.mapcandidate[ i ];
+        info = level.mapcandidate[i];
         
         text = &"unknown";
-        color = ( 1, 1, 1 );
-        switch ( info[ "difficulty" ] ) {
+        color = (1, 1, 1);
+        switch(info["difficulty"]) {
             case "easy":
                 text = &"easy";
-                color = ( 0.08235, 0.6902, 0.10196 );
+                color = (0.08235, 0.6902, 0.10196);
             break;
             case "med":
             case "medium":
                 text = &"medium";
-                color = ( 1.0, 1.0, 0.07843 );
+                color = (1.0, 1.0, 0.07843);
             break;
             case "hard":
                 text = &"hard";
-                color = ( 0.97647, 0.45098, 0.02353 );
+                color = (0.97647, 0.45098, 0.02353);
             break;
             case "expert":
                 text = &"expert";
-                color = ( 0.89804, 0.0, 0.0 );
+                color = (0.89804, 0.0, 0.0);
             break;
             case "easy/hard":
             case "all":
                 text = &"all difficulties";
-                color = ( 0.58431, 0.81569, 0.98824 );
+                color = (0.58431, 0.81569, 0.98824);
             break;
         }
         
-        tmp setText( text );
+        tmp setText(text);
         tmp.color = color;
         
-        level.mapdifficulties[ i ] = tmp;
+        level.mapdifficulties[i] = tmp;
     }
     
-    level waittill( "voting_map_difficulty" ); // tmp
+    level waittill("voting_map_difficulty"); // tmp
     
     wait 0.05;
     
-    //level.map_difficulty fadeOverTime( 1 );
-    //level.map_difficulty.alpha =0;
-    for ( i = 0; i < 5; i++ ) {
-        level.mapdifficulties[ i ] fadeOverTime( 1 );
-        level.mapdifficulties[ i ].alpha = 0;
+    // level.map_difficulty fadeOverTime(1);
+    // level.map_difficulty.alpha = 0;
+    for (i = 0; i < 5; i++) {
+        level.mapdifficulties[i] fadeOverTime(1);
+        level.mapdifficulties[i].alpha = 0;
     }
     
     wait 1;
     
-    //level.map_difficulty destroy();
-    for ( i = 0; i < 5; i++ ) 
-        level.mapdifficulties[ i ] destroy();
+    // level.map_difficulty destroy();
+    for (i = 0; i < 5; i++) 
+        level.mapdifficulties[i] destroy();
 }
