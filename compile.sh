@@ -2,7 +2,7 @@
 
 JUMPMOD_NAME='zzz_jumpmod'
 JUMPMOD_PATH="$(pwd)"
-JUMPMOD_FILES=(callback.gsc maps jumpmod)
+JUMPMOD_FILES=('callback.gsc' 'maps' 'jumpmod')
 J2G_SUBMODULE='744759c'
 
 if [[ "$J2G_SUBMODULE" != "$(git submodule status | cut -c '2-8')" ]]; then
@@ -31,5 +31,8 @@ if [[ -d "$JUMPMOD_PATH" && "$(basename "$JUMPMOD_PATH")" == "$JUMPMOD_NAME" ]];
         fi
     fi
 
-    zip -r "$JUMPMOD_NAME.pk3" "${JUMPMOD_FILES[@]}"
+    (
+        cd 'src' || { echo 'src folder missing.'; exit 1; }
+        zip -r "../$JUMPMOD_NAME.pk3" "${JUMPMOD_FILES[@]}"
+    )
 fi
