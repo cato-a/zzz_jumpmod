@@ -24,7 +24,7 @@ if [[ -d "$JUMPMOD_PATH" && "$(basename "$JUMPMOD_PATH")" == "$JUMPMOD_NAME" ]];
 
         if [[ -x "$JUMPMOD_PATH/json2gsc/Build/Staged/json2gsc" ]]; then
             echo -n 'json2gsc: '
-            "$JUMPMOD_PATH/json2gsc/Build/Staged/json2gsc" "$JUMPMOD_PATH/json2gsc/Build/Staged/mapconfigs" "$JUMPMOD_PATH/jumpmod/settings.gsc"
+            "$JUMPMOD_PATH/json2gsc/Build/Staged/json2gsc" "$JUMPMOD_PATH/json2gsc/Build/Staged/mapconfigs" "$JUMPMOD_PATH/src/jumpmod/settings.gsc"
         else
             echo 'json2gsc: executable not found.'
             exit 1
