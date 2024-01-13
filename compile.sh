@@ -3,7 +3,7 @@
 JUMPMOD_NAME='zzz_jumpmod'
 JUMPMOD_PATH="$(pwd)"
 JUMPMOD_FILES=('callback.gsc' 'maps' 'jumpmod')
-J2G_SUBMODULE='744759c'
+J2G_SUBMODULE='3f8e7d5'
 
 if [[ "$J2G_SUBMODULE" != "$(git submodule status | cut -c '2-8')" ]]; then
     echo 'json2gsc: submodule has changed. "compile.sh" need to be updated.'
