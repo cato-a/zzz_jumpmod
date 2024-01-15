@@ -6,7 +6,7 @@ JUMPMOD_FILES=('callback.gsc' 'maps' 'jumpmod')
 J2G_SUBMODULE='3f8e7d5'
 
 if [[ "$J2G_SUBMODULE" != "$(git submodule status | cut -c '2-8')" ]]; then
-    echo 'json2gsc: submodule has changed. "compile.sh" need to be updated.'
+    echo 'json2gsc: submodule has changed. "'"$(basename "$0")"'" need to be updated'
     exit 1
 fi
 
@@ -14,25 +14,41 @@ if [[ -d "$JUMPMOD_PATH" && "$(basename "$JUMPMOD_PATH")" == "$JUMPMOD_NAME" ]];
     if [[ "$1" == 'j2g' || "$1" == 'json2gsc' ]]; then
         if [[ ! -d "$JUMPMOD_PATH/json2gsc/Build" ]]; then
             (
-                cd 'json2gsc' || { echo 'json2gsc: folder missing.'; exit 1; }; mkdir 'Build'
+                cd 'json2gsc' || { echo 'json2gsc: folder missing'; exit 1; }; mkdir 'Build'
                 cmake . -B 'Build'
                 cmake --build 'Build'
             )
         else
-            echo 'json2gsc: Build/ folder already exists. Skipping build.'
+            echo 'json2gsc: "Build/" folder already exists. Skipping build'
         fi
 
         if [[ -x "$JUMPMOD_PATH/json2gsc/Build/Staged/json2gsc" ]]; then
             echo -n 'json2gsc: '
-            "$JUMPMOD_PATH/json2gsc/Build/Staged/json2gsc" "$JUMPMOD_PATH/json2gsc/Build/Staged/mapconfigs" "$JUMPMOD_PATH/src/jumpmod/settings.gsc"
+
+            if ! "$JUMPMOD_PATH/json2gsc/Build/Staged/json2gsc" "$JUMPMOD_PATH/json2gsc/Build/Staged/mapconfigs" "$JUMPMOD_PATH/src/jumpmod/settings.gsc"; then
+                exit 1
+            fi
         else
-            echo 'json2gsc: executable not found.'
+            echo 'json2gsc: executable not found'
             exit 1
         fi
+
+        echo
+    fi
+
+    if [[ ! -f "$JUMPMOD_PATH/src/jumpmod/settings.gsc" ]]; then
+        echo 'Missing "settings.gsc", run:' "$(basename "$0")" 'json2gsc'
+        exit 1
+    fi
+
+    if [[ -f "$JUMPMOD_NAME.pk3" ]]; then
+        echo 'Updating "'"$JUMPMOD_NAME.pk3"'":'
+    else
+        echo 'Creating "'"$JUMPMOD_NAME.pk3"'":'
     fi
 
     (
-        cd 'src' || { echo 'src folder missing.'; exit 1; }
+        cd 'src' || { echo 'Missing "src/" folder'; exit 1; }
         zip -r "../$JUMPMOD_NAME.pk3" "${JUMPMOD_FILES[@]}"
     )
 fi
