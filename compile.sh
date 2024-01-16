@@ -14,7 +14,7 @@ if [[ -d "$JUMPMOD_PATH" && "$(basename "$JUMPMOD_PATH")" == "$JUMPMOD_NAME" ]];
     if [[ "$1" == 'j2g' || "$1" == 'json2gsc' ]]; then
         if [[ ! -d "$JUMPMOD_PATH/json2gsc/Build" ]]; then
             (
-                cd 'json2gsc' || { echo 'json2gsc: folder missing'; exit 1; }; mkdir 'Build'
+                cd 'json2gsc' || { echo 'json2gsc: Missing "json2gsc/" folder'; exit 1; }; mkdir 'Build'
                 cmake . -B 'Build'
                 cmake --build 'Build'
             )
@@ -49,6 +49,6 @@ if [[ -d "$JUMPMOD_PATH" && "$(basename "$JUMPMOD_PATH")" == "$JUMPMOD_NAME" ]];
 
     (
         cd 'src' || { echo 'Missing "src/" folder'; exit 1; }
-        zip -r "../$JUMPMOD_NAME.pk3" "${JUMPMOD_FILES[@]}"
+        zip -r "$JUMPMOD_PATH/$JUMPMOD_NAME.pk3" "${JUMPMOD_FILES[@]}"
     )
 fi
