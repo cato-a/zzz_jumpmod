@@ -396,7 +396,7 @@ jmpSavePosition()
         return;
 
     if(isDefined(self.save_disabled) && self.save_disabled) {
-        self iPrintLn("^1Saving is disabled.  This incident will be reported.");
+        self iPrintLn("^1Saving is disabled."); // This incident will be reported. ;)
         return;
     }
 
@@ -425,43 +425,44 @@ jmpLoadPosition()
     if(self.save_array.size == 0) {
         self iPrintLn("^1You don't have any saved positions.");
         return;
-    } 
+    } else {
+        if(self.load_index == (self.save_array_max_length - 1) || self.load_index >= self.save_array.size) // Make sure the player doesn't try to load a position outside of the save_array size
+            self.load_index = 0;
 
-    if(self.load_index == (self.save_array_max_length - 1) || self.load_index >= self.save_array.size) // Make sure the player doesn't try to load a position outside of the save_array size
-        self.load_index = 0;
-
-    if(!isDefined(self.load_old_pos)) { // Check if load hasn't been used yet
-        self.load_index = 0;
-    } else if(distance(self.load_old_pos, self.origin) > 20) { // If the player has moved more than 20 units, reset the load index back to 0
-        self.load_index = 0;
-    }
-
-    if(positionWouldTelefrag(self.save_array[self.load_index]["origin"])) {
-        if(distance(self.origin, self.save_array[self.load_index]["origin"]) < 33) {
-            // Tillat fordi distansen mellom deg og save-posisjonen er mindre enn 33, og da
-            // betyr dette med all sannsynlighet at det er deg selv som blokkerer posisjonen
-            // Spilleren er 32 units bred, 72 units høy, 33 units passer da bra som distanse
+        if(!isDefined(self.load_old_pos)) { // Check if load hasn't been used yet
+            self.load_index = 0;
         } else {
-            self iPrintLn("^1A player is already on this position.");
-            return;
+            if(distance(self.load_old_pos, self.origin) > 20) // If the player has moved more than 20 units, reset the load index back to 0
+                self.load_index = 0;
         }
-    }
 
-    self setPlayerAngles(self.save_array[self.load_index]["angles"]); // Update the player position
-    self setOrigin(self.save_array[self.load_index]["origin"]);
+        if(positionWouldTelefrag(self.save_array[self.load_index]["origin"])) {
+            if(distance(self.origin, self.save_array[self.load_index]["origin"]) < 33) {
+                // Tillat fordi distansen mellom deg og save-posisjonen er mindre enn 33, og da
+                // betyr dette med all sannsynlighet at det er deg selv som blokkerer posisjonen
+                // Spilleren er 32 units bred, 72 units høy, 33 units passer da bra som distanse
+            } else {
+                self iPrintLn("^1A player is already on this position.");
+                return;
+            }
+        }
 
-    self.load_old_pos = self.origin; // Update the old position
+        self setPlayerAngles(self.save_array[self.load_index]["angles"]); // Update the player position
+        self setOrigin(self.save_array[self.load_index]["origin"]);
 
-    if(self.load_index == 0)
-        self iPrintLn("^1Your saved position is ^2loaded^1.");
-    else
-        self iPrintLn("^1Your backup position #" + self.load_index + " is ^2loaded^1.");
+        self.load_old_pos = self.origin; // Update the old position
 
-    self.load_index++; // Update the load_index
-    
-    if(isDefined(self.save_disabled) && self.save_disabled) {
-        self.save_disabled = false;
-        self iPrintLn("^1Saving ^2enabled!");
+        if(self.load_index == 0)
+            self iPrintLn("^1Your saved position is ^2loaded^1.");
+        else
+            self iPrintLn("^1Your backup position #" + self.load_index + " is ^2loaded^1.");
+
+        self.load_index++; // Update the load_index
+
+        if(isDefined(self.save_disabled) && self.save_disabled) {
+        	self.save_disabled = false;
+        	self iPrintLn("^1Saving ^2enabled!");
+    	}
     }
 }
 
