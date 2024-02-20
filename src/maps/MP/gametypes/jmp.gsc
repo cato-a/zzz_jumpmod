@@ -409,7 +409,7 @@ jmpSavePosition()
     self.save_array = self.tmp_arr; // Set the save_array to be equal to the temp array
 
     self.save_array[0]["origin"] = self.origin; // Insert the new save in the first position (now cleared)
-    self.save_array[0]["angles"] = self.angles;
+    self.save_array[0]["angles"] = self getPlayerAngles();
 
     self iPrintLn("^1Your current position is ^2saved^1.");
     self iPrintLn("^1(^7X: ^2" + (int)self.origin[0] + "^7 Y: ^2" + (int)self.origin[1] + "^7 Z: ^2" + (int)self.origin[2] + "^1)");
