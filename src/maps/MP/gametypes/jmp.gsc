@@ -218,7 +218,6 @@ Callback_PlayerConnect()
     self.statusicon = "";
 
     iPrintLn(jumpmod\functions::namefix(self.name) + " ^7Connected");
-    self.blocking = false;
     self.nodamage = false;
     self.save_array = []; // Declare jumpsave array
     self.save_array_max_length = 52;
@@ -598,6 +597,7 @@ spawnPlayer()
 
     resettimeout();
 
+    self.blocking = false;
     self.sessionteam = "allies";
     self.sessionstate = "playing";
     self.spectatorclient = -1;
