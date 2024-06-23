@@ -886,5 +886,7 @@ jmpDisplayPlayerFps()
         wait 0.25;
     }
 
-    self.hud_fps destroy();
+    if(isDefined(self.hud_fps)) {
+        self.hud_fps destroy();
+    }
 }
