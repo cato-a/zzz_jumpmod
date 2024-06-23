@@ -2092,74 +2092,6 @@ cmd_teleport(args)
     player1 setOrigin((x, y, z));
 }
 
-cmd_maplist(args)
-{
-    if(args.size != 1) {
-        message_player("^1ERROR: ^7Invalid number of arguments. (!=1)");
-        return;
-    }
-
-    message_player("^5INFO: ^7Here is a list of jump maps:");
-    message_player("[SoB]EasyJump        bitch                   ch_quickie");
-    message_player("ch_secret            ch_space                cj_change");
-    message_player("cj_hallwayofdoom     CJ_HORNET               cj_wolfjump");
-    message_player("cp_easy_jump         cp_sirens_call          cs_smoke");
-    message_player("CT_Aztec             Dan_JumpV3              ddd_easy_jump");
-    message_player("double_vision        fm_squishydeath_easy    fm_squishydeath_hard");
-    message_player("funjump              groms_skatepark         hardjump");
-    message_player("jm_amatuer           jm_bounce               jm_canonjump");
-    message_player("jm_caramba_easy      jm_caramba_hard         jm_castle");
-    message_player("jm_clampdown         jm_classique            jm_crispy");
-    message_player("jm_Everything        jm_factory              jm_fear");
-    message_player("jm_foundry           jm_gap                  jm_ghoti");
-    message_player("jm_hollywood         jm_House_of_pain        jm_Infiniti");
-    message_player("Jm_Krime             jm_kubuntu              jm_learn2jump");
-    message_player("jm_lockover          jm_maniacmansion        jm_mota");
-    wait 0.10;
-    message_player("jm_motion_light      jm_motion_pro           jm_pillz");
-    message_player("jm_plazma            jm_robbery              jm_skysv4c");
-    message_player("jm_speed             jm_sydneyharbour_easy   jm_sydneyharbour_hard");
-    message_player("jm_tools             jm_towering_inferno     jm_uzi");
-    message_player("jm_woop              jt_dunno                jump_colors");
-    message_player("jumping-falls        kn_angry                krime_pyramid");
-    message_player("mazeofdeath_easy     mazeofdeath_hard        mazeofdeath_vhard");
-    message_player("mj_noname_hard       mp_jump                 NEV_CodeRed");
-    message_player("NEV_FirstOneV2       NEV_jumpfacility        NEV_JumpFacilityV2");
-    message_player("NEV_NamedSpace       NEV_TempleOfPoseidonV2  nm_castle");
-    message_player("nm_jump              nm_mansion              nm_portal");
-    message_player("nm_race              nm_tower                nm_toybox_easy");
-    message_player("nm_toybox_hard       nm_treehouse            nm_unlocked");
-    message_player("nn_lfmjumpv2         peds_f4a                peds_pace");
-    message_player("peds_palace          peds_parkour            peds_puzzle");
-    wait 0.10;
-    message_player("race                 railyard_jump_hard      railyard_jump_light");
-    message_player("railyard_jump_ultra  sKratch_Easy_v2         sKratch_Hard_v2");
-    message_player("sKratch_Medium_v2    son-of-bitch            starship");
-    message_player("svb_basics           SVB_DarkBlade           SVB_Hallway");
-    message_player("SVB_Marathon         SVB_Sewer               svt_xmas_v2");
-    message_player("vik_jump             wacked                  zaitroofs");
-    message_player("zaittower2");
-    message_player("^5INFO: ^7Bounce maps:");
-    message_player("gg_neon              gg_neon_v2              zh_farbe");
-    message_player("zh_mario_thwomp      zh_mirage               zh_unknown");
-    message_player("^5INFO: ^7Duo maps:");
-    message_player("duo_cool2            nm_dual_2");
-    message_player("^5INFO: ^7Multiple ending maps:");
-    message_player("CLS_Industries       harbor_jump             LS_Darkness");
-    message_player("nm_random            SVB_Rage");
-    wait 0.10;
-    message_player("^5INFO: ^7Bunnyhop maps:");
-    message_player("bhop                 bhop_gaps               bhop_start");
-    message_player("bhop2");
-    message_player("^5INFO: ^7Training maps:");
-    message_player("bigstrafe            gg_shortbounce          nm_training ");
-    message_player("mj_Dutchjumpers_gap  ultra_gap_training");
-    message_player("^5INFO: ^7New maps:");
-    message_player("bc_bocli             jm_gayfected            nm_trap");
-    message_player("V_ForgottenTomb      V_Sequence              V_XmasRace");
-    message_player("zozo_8thjump         zozo_6thjump            zozo_2ndjump");
-}
-
 cmd_vote(args)
 {
     args1 = args[1]; // <endmap|extend|yes|no>
@@ -4130,5 +4062,47 @@ cmd_namechange(args)
         default:
             message_player("^1ERROR: ^7Invalid argument.");
         break;
+    }
+}
+
+cmd_maplist(args)
+{
+    cmdmaps = getCvar("scr_mm_cmd_maps");
+    if(cmdmaps == "") {
+        message_player("^1ERROR: ^7No maps in scr_mm_cmd_maps.");
+        return;
+    }
+
+    for(i = 1; /*!*/; i++) {
+        _cvar = getCvar("scr_mm_cmd_maps" + i);
+        if(_cvar == "") {
+            break;
+        }
+
+        cmdmaps += " " + _cvar;
+    }
+
+    cmdmaps = jumpmod\functions::strTok(cmdmaps, " ");
+    message_player("^5INFO: ^7Here is a list of available !vote jump maps:");
+
+    message = "";
+    for(i = 0; i < cmdmaps.size; i++) {
+        if(i % 2 == 0) {
+            message += "^1";
+        } else {
+            message += "^3";
+        }
+
+        message += cmdmaps[i];
+        if((i + 1) % 7 == 0) {
+            message_player(message);
+            message = "";
+        } else {
+            message += " ";
+        }
+    }
+
+    if(i % 7 != 0) {
+        message_player(message);
     }
 }
