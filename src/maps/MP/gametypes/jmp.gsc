@@ -131,10 +131,10 @@ Callback_StartGameType()
     else
         setClientNameMode("auto_change");
 
-    game["statusicon_american"]   = "gfx/hud/headicon@allies.tga";
-    game["statusicon_british"]    = "gfx/hud/headicon@allies.tga";
-    game["statusicon_german"]     = "gfx/hud/headicon@axis.tga";
-    game["statusicon_russian"]    = "gfx/hud/headicon@allies.tga";
+    game["statusicon_american"] = "gfx/hud/headicon@allies.tga";
+    game["statusicon_british"] = "gfx/hud/headicon@allies.tga";
+    game["statusicon_german"] = "gfx/hud/headicon@axis.tga";
+    game["statusicon_russian"] = "gfx/hud/headicon@allies.tga";
 
     precacheStatusIcon(game["statusicon_" + game["allies"]]);
     precacheStatusIcon(game["statusicon_" + game["axis"]]);
@@ -144,6 +144,8 @@ Callback_StartGameType()
     precacheHeadIcon("gfx/hud/headicon@quickmessage");
     precacheHeadIcon("gfx/hud/headicon@re_objcarrier.tga");
     precacheHeadIcon("gfx/hud/hud@health_cross.tga");
+
+    precacheString(&"FPS: ");
 
     jumpmod\mapvote::init();
     jumpmod\commands::precache();
