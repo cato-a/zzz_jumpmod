@@ -177,7 +177,7 @@ Callback_PlayerConnect()
         bannedtime = level.bans[banindex]["time"];
         if(bannedtime > 0) {
             bannedsrvtime = level.bans[banindex]["srvtime"];
-            remaining = bannedtime - (seconds() - bannedsrvtime);
+            remaining = bannedtime - (getSystemTime() - bannedsrvtime);
             if(remaining > 0) {
                 self.isbanned = true;
                 bannedreason = "tempban remaining ";
@@ -205,11 +205,10 @@ Callback_PlayerConnect()
     }
 
     if(isDefined(self.isbanned)) { // used in PlayerDisconnect
-        self sendservercommand("w \"Player Banned: ^1" + bannedreason + "\"");
+        sendCommandToClient(self getEntityNumber(), "w \"Player Banned: ^1" + bannedreason + "\"");
         self waittill("begin");
-        wait 0.05; // server/script crashes without it
-        kickmsg = "Player Banned: ^1" + bannedreason;
-        self dropclient(kickmsg);
+        wait 0.05;
+        self dropclient("Player Banned: ^1" + bannedreason);
         return;
     }
 
@@ -419,40 +418,40 @@ jmpLoadPosition()
     if(self.save_array.size == 0) {
         self iPrintLn("^1You don't have any saved positions.");
         return;
-    } else {
-        if(self.load_index == (self.save_array_max_length - 1) || self.load_index >= self.save_array.size) // Make sure the player doesn't try to load a position outside of the save_array size
-            self.load_index = 0;
-
-        if(!isDefined(self.load_old_pos)) { // Check if load hasn't been used yet
-            self.load_index = 0;
-        } else {
-            if(distance(self.load_old_pos, self.origin) > 20) // If the player has moved more than 20 units, reset the load index back to 0
-                self.load_index = 0;
-        }
-
-        if(positionWouldTelefrag(self.save_array[self.load_index]["origin"])) {
-            if(distance(self.origin, self.save_array[self.load_index]["origin"]) < 33) {
-                // Tillat fordi distansen mellom deg og save-posisjonen er mindre enn 33, og da
-                // betyr dette med all sannsynlighet at det er deg selv som blokkerer posisjonen
-                // Spilleren er 32 units bred, 72 units høy, 33 units passer da bra som distanse
-            } else {
-                self iPrintLn("^1A player is already on this position.");
-                return;
-            }
-        }
-
-        self setPlayerAngles(self.save_array[self.load_index]["angles"]); // Update the player position
-        self setOrigin(self.save_array[self.load_index]["origin"]);
-
-        self.load_old_pos = self.origin; // Update the old position
-
-        if(self.load_index == 0)
-            self iPrintLn("^1Your saved position is ^2loaded^1.");
-        else
-            self iPrintLn("^1Your backup position #" + self.load_index + " is ^2loaded^1.");
-
-        self.load_index++; // Update the load_index
     }
+
+    if(self.load_index == (self.save_array_max_length - 1) || self.load_index >= self.save_array.size) // Make sure the player doesn't try to load a position outside of the save_array size
+        self.load_index = 0;
+
+    if(!isDefined(self.load_old_pos)) { // Check if load hasn't been used yet
+        self.load_index = 0;
+    } else {
+        if(distance(self.load_old_pos, self.origin) > 20) // If the player has moved more than 20 units, reset the load index back to 0
+            self.load_index = 0;
+    }
+
+    if(positionWouldTelefrag(self.save_array[self.load_index]["origin"])) {
+        if(distance(self.origin, self.save_array[self.load_index]["origin"]) < 33) {
+            // Tillat fordi distansen mellom deg og save-posisjonen er mindre enn 33, og da
+            // betyr dette med all sannsynlighet at det er deg selv som blokkerer posisjonen
+            // Spilleren er 32 units bred, 72 units høy, 33 units passer da bra som distanse
+        } else {
+            self iPrintLn("^1A player is already on this position.");
+            return;
+        }
+    }
+
+    self setPlayerAngles(self.save_array[self.load_index]["angles"]); // Update the player position
+    self setOrigin(self.save_array[self.load_index]["origin"]);
+
+    self.load_old_pos = self.origin; // Update the old position
+
+    if(self.load_index == 0)
+        self iPrintLn("^1Your saved position is ^2loaded^1.");
+    else
+        self iPrintLn("^1Your backup position #" + self.load_index + " is ^2loaded^1.");
+
+    self.load_index++; // Update the load_index
 }
 
 jmpWeapons()
@@ -630,6 +629,7 @@ spawnPlayer()
 
     self thread jmpAntiblock();
     self thread jmpWeapons();
+    self thread jmpDisplayPlayerFps();
 
     if(!isDefined(self.firstspawn)) {
         self.firstspawn = true;
@@ -869,4 +869,22 @@ mmKeys()
             }
         }
     }
+}
+
+jmpDisplayPlayerFps()
+{ // Thanks Raphael
+    self.hud_fps = newClientHudElem(self);
+    self.hud_fps.sort = -1;
+    self.hud_fps.x = 540;
+    self.hud_fps.y = 25;
+    self.hud_fps.fontScale = 0.8;
+    self.hud_fps.color = (1, 1, 0);
+    self.hud_fps.label = &"FPS: ";
+
+    while(self.sessionstate == "playing") {
+        self.hud_fps setValue(self getFPS());
+        wait 0.25;
+    }
+
+    self.hud_fps destroy();
 }

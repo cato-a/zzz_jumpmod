@@ -1,23 +1,37 @@
 _timerStuck() // tip by Jona
 {
-    if(!isDefined(game["maprestarts"]))
+    if(!isDefined(game["maprestarts"])) {
         game["maprestarts"] = 0;
+    }
 
     for(;;) {
         wait 60;
 
         players = getEntArray("player", "classname");
         if(players.size == 0) {
-            if(game["maprestarts"] > 7) {
-                level notify("end_map"); // idea is to just rotate the map
-                return;
-            }
+            emptymap = getCvar("scr_mm_emptymap");
+            if(emptymap != "") {
+                if(emptymap != level.mapname) {
+                    setCvar("sv_mapRotationCurrent", "gametype " + level.gametype + " map " + emptymap);
+                    wait 1;
+                    level.mapended = true;
+                    game["state"] = "intermission";
+                    level notify("intermission");
+                    exitLevel(false);
+                } else {
+                    map_restart(false);
+                }
+            } else {
+                if(game["maprestarts"] > 7) {
+                    level notify("end_map"); // idea is to just rotate the map
+                    return;
+                }
 
-            game["maprestarts"]++;
-            map_restart(true); // true playerinfo retained
-        } else {
-            if(game["maprestarts"] != 0)
-                game["maprestarts"] = 0;
+                game["maprestarts"]++;
+                map_restart(true); // true playerinfo retained
+            }
+        } else if(game["maprestarts"] != 0) {
+            game["maprestarts"] = 0;
         }
     }
 }

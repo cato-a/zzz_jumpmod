@@ -280,7 +280,7 @@ validate_number(input, isfloat)
 
 mmlog(msg)
 {
-    printconsole(msg + "\n");
+    logPrintConsole(msg + "\n");
     logPrint(msg + "\n");
 }
 

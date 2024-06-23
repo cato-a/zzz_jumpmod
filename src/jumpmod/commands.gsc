@@ -157,51 +157,10 @@ commands(id, cmd, func, desc)
 
 command(str)
 {
-    if(!isDefined(str)) // string index 0 out of range
-        return;
-
-    str = jumpmod\functions::strip(str);
-    if(str.size < 1) { // string index 0 out of range
-        creturn(); // return in codextended.so
-        return;
-    }
-
-    isloggedin = (bool)isDefined(self.pers["mm_group"]);
-    if(level.maxmessages > 0 && !isloggedin) {
-        penaltytime = level.penaltytime;
-        if(self.pers["mm_chatmessages"] > level.maxmessages)
-            penaltytime += self.pers["mm_chatmessages"] - level.maxmessages;
-        penaltytime *= 1000;
-
-        if(getTime() - self.pers["mm_chattimer"] >= penaltytime) {
-            self.pers["mm_chattimer"] = getTime();
-            self.pers["mm_chatmessages"] = 1;
-        } else {
-            self.pers["mm_chatmessages"]++;
-            if(self.pers["mm_chatmessages"] > level.maxmessages) {
-                if(self.pers["mm_chatmessages"] > 19) // 20 seconds max wait
-                    self.pers["mm_chatmessages"] = 19; // 20 seconds max wait
-                
-                unit = "seconds";
-                if(penaltytime == 1000) // 1 second
-                    unit = "second";
-                message_player("You are currently muted for " + (penaltytime / 1000.0) + " " + unit + ".");
-            }
-        }
-    }
-
-    if(level.maxmessages > 0 && self.pers["mm_chatmessages"] > level.maxmessages) {
-        creturn(); // return in codextended.so
-        return;
-    }
-
     if(str.size == 1) return; // just 1 letter, ignore
-    if(str[0] != level.prefix) // string index 0 out of range (fixed above)
-        return;
-
-    creturn(); // return in codextended.so
-
+    isloggedin = (bool)isDefined(self.pers["mm_group"]);
     cmd = jumpmod\functions::strTok(str, " "); // is a command with level.prefix
+
     if(isDefined(level.commands[cmd[0]])) {
         perms = level.perms["default"];
 
@@ -236,21 +195,54 @@ command(str)
             message_player("^1ERROR: ^7Access denied.");
         else
             message_player("^1ERROR: ^7No such command. Check your spelling.");
-    } else
-        message_player("^1ERROR: ^7No such command. Check your spelling.");
+    }
+}
+
+command_mute(str)
+{
+    if((bool)isDefined(self.pers["mm_group"])) {
+        return false;
+    }
+
+    if(level.maxmessages > 0) {
+        penaltytime = level.penaltytime;
+        if(self.pers["mm_chatmessages"] > level.maxmessages) {
+            penaltytime += self.pers["mm_chatmessages"] - level.maxmessages;
+        }
+
+        penaltytime *= 1000;
+        if(getTime() - self.pers["mm_chattimer"] >= penaltytime) {
+            self.pers["mm_chattimer"] = getTime();
+            self.pers["mm_chatmessages"] = 1;
+        } else {
+            self.pers["mm_chatmessages"]++;
+            if(self.pers["mm_chatmessages"] > level.maxmessages) {
+                if(self.pers["mm_chatmessages"] > 19) // 20 seconds max wait
+                    self.pers["mm_chatmessages"] = 19; // 20 seconds max wait
+                
+                unit = "seconds";
+                if(penaltytime == 1000) // 1 second
+                    unit = "second";
+                message_player("You are currently muted for " + (penaltytime / 1000.0) + " " + unit + ".");
+            }
+        }
+    }
+
+    if(isDefined(self.pers["mm_mute"]) || (level.maxmessages > 0 && self.pers["mm_chatmessages"] > level.maxmessages)) {
+        return true;
+    }
+
+    return false;
 }
 
 permissions(perms, id) // "*:<id>:<id1>-<id2>:!<id>" :P
 {
-    wildcard = false;
     for(i = 0; i < perms.size; i++) {
-        if(perms[i] == "*")
-            wildcard = true;
-        else if(perms[i] == ("" + id))
+        if(perms[i] == "*" || perms[i] == ("" + id)) {
             return true;
-        else if(perms[i] == ("!" + id))
+        } else if(perms[i] == ("!" + id)) {
             return false;
-        else {
+        } else {
             range = jumpmod\functions::strTok(perms[i], "-");
             if(range.size == 2) {
                 rangeperm = false;
@@ -275,7 +267,7 @@ permissions(perms, id) // "*:<id>:<id1>-<id2>:!<id>" :P
         }
     }
 
-    return wildcard;
+    return false;
 }
 
 /*
@@ -290,15 +282,16 @@ w = drop client with message
 */
 message_player(msg, player)
 {
-    if(!isDefined(player))
+    if(!isDefined(player)) {
         player = self;
+    }
 
-    player sendservercommand("i \"^7^7" + level.nameprefix + ": ^7" + msg + "\""); // ^7^7 fixes spaces problem
+    sendCommandToClient(player getEntityNumber(), "i \"^7^7" + level.nameprefix + ": ^7" + msg + "\""); // ^7^7 fixes spaces problem
 }
 
 message(msg)
 {
-    sendservercommand("i \"^7^7" + level.nameprefix + ": ^7" + msg + "\""); // ^7^7 fixes spaces problem
+    sendCommandToClient(-1, "i \"^7^7" + level.nameprefix + ": ^7" + msg + "\""); // ^7^7 fixes spaces problem
 }
 
 spaces(amount)
@@ -411,76 +404,75 @@ _delete()
 _loadBans()
 {
     filename = level.workingdir + level.banfile;
-    if(fexists(filename)) {
-        file = fopen(filename, "r");
-        if(file != -1)
-            data = fread(0, file); // codextended.so bug?
-        fclose(file); // all-in-one chunk
+    if(!file_exists(filename)) {
+        return;
+    }
 
-        if(isDefined(data)) {
-            numbans = 0;
-            unixtime = seconds();
-            data = jumpmod\functions::strTok(data, "\n");
-            for(i = 0; i < data.size; i++) {
-                if(!isDefined(data[i])) // crashed here for some odd reason? this should never happen
-                    continue; // crashed here for some odd reason? this should never happen
+    data = "";
+    file = fopen(filename, "r");
+    if(isDefined(file)) {
+        chunk = fread(file);
+        while(isDefined(chunk)) {
+            data += chunk;
+            chunk = fread(file);
+        }
+    }
+    fclose(file);
 
-                line = jumpmod\functions::strTok(data[i], "%"); // crashed here for some odd reason? this should never happen
-                if(line.size != 6) // Reported by ImNoob AKA Gatsby
-                    continue;
+    if(data == "") {
+        return;
+    }
 
-                banfile_error = false;
-                for(l = 0; l < line.size; l++) {
-                    if(!isDefined(line[l])) {
-                        banfile_error = true;
-                        break;
-                    }
-                }
+    numbans = 0;
+    unixtime = getSystemTime();
+    data = jumpmod\functions::strTok(data, "\n");
+    for(i = 0; i < data.size; i++) {
+        line = jumpmod\functions::strTok(data[i], "%");
+        if(line.size != 6) {
+            jumpmod\functions::mmlog("banfile;error;line != 6");
+            continue;
+        }
 
-                if(banfile_error)
-                    continue;// Reported by ImNoob AKA Gatsby
-
-                numbans++;
-                bannedtime = (int)line[3];
-                bannedsrvtime = (int)line[4];
-                if(bannedtime > 0) { // tempban
-                    remaining = bannedtime - (unixtime - bannedsrvtime);
-                    if(remaining <= 0) // player unbanned
-                        continue;
-                }
-
-                bannedip = line[0];
-                bannedby = line[1];
-                bannedname = line[2];
-                bannedreason = line[5];
-
-                index = level.bans.size;
-                level.bans[index]["ip"] = bannedip;
-                level.bans[index]["by"] = bannedby;
-                level.bans[index]["name"] = bannedname;
-                level.bans[index]["time"] = bannedtime;
-                level.bans[index]["srvtime"] = bannedsrvtime;
-                level.bans[index]["reason"] = bannedreason;
-            }
-
-            if(level.bans.size != numbans) { // banfile changed, update miscmod_bans.dat
-                file = fopen(filename, "w");
-                if(level.bans.size > 0) {
-                    for(i = 0; i < level.bans.size; i++) {
-                        line = "";
-                        line += level.bans[i]["ip"];
-                        line += "%%" + level.bans[i]["by"];
-                        line += "%%" + level.bans[i]["name"];
-                        line += "%%" + level.bans[i]["time"];
-                        line += "%%" + level.bans[i]["srvtime"];
-                        line += "%%" + level.bans[i]["reason"];
-                        line += "\n";
-                        fwrite(line, file);
-                    }
-                }
-                fclose(file);
+        numbans++;
+        bannedtime = (int)line[3];
+        bannedsrvtime = (int)line[4];
+        if(bannedtime > 0) { // tempban
+            remaining = bannedtime - (unixtime - bannedsrvtime);
+            if(remaining <= 0) {// player unbanned
+                continue;
             }
         }
+
+        bannedip = line[0];
+        bannedby = line[1];
+        bannedname = line[2];
+        bannedreason = line[5];
+
+        index = level.bans.size;
+        level.bans[index]["ip"] = bannedip;
+        level.bans[index]["by"] = bannedby;
+        level.bans[index]["name"] = bannedname;
+        level.bans[index]["time"] = bannedtime;
+        level.bans[index]["srvtime"] = bannedsrvtime;
+        level.bans[index]["reason"] = bannedreason;
+    }
+
+    if(level.bans.size != numbans) { // banfile changed, update miscmod_bans.dat
+        file = fopen(filename, "w");
+        if(level.bans.size > 0) {
+            for(i = 0; i < level.bans.size; i++) {
+                line = "";
+                line += level.bans[i]["ip"];
+                line += "%" + level.bans[i]["by"];
+                line += "%" + level.bans[i]["name"];
+                line += "%" + level.bans[i]["time"];
+                line += "%" + level.bans[i]["srvtime"];
+                line += "%" + level.bans[i]["reason"];
+                line += "\n";
+                fwrite(file, line);
+            }
+        }
+        fclose(file);
     }
 }
 
@@ -838,8 +830,9 @@ cmd_say(args)
                 args1 += " " + args[a];
     }
 
-    if(isDefined(self.pers["mm_group"]))
-        sendservercommand("i \"^7^3[^7" + self.pers["mm_group"] + "^3] ^7" + jumpmod\functions::namefix(self.name) + "^7: " + args1 + "\"");
+    if(isDefined(self.pers["mm_group"])) {
+        sendCommandToClient(-1, "i \"^7^3[^7" + self.pers["mm_group"] + "^3] ^7" + jumpmod\functions::namefix(self.name) + "^7: " + args1 + "\"");
+    }
 }
 
 cmd_saym(args)
@@ -1449,7 +1442,7 @@ cmd_ban(args)
 
     level.banactive = true;
     filename = level.workingdir + level.banfile;
-    if(fexists(filename)) {
+    if(file_exists(filename)) {
         if(isipaddr) {
             bannedip = args1;
             bannedname = "^7An IP address";
@@ -1465,18 +1458,18 @@ cmd_ban(args)
         else
             bannedreason = "N/A";
 
-        bannedsrvtime = seconds();
+        bannedsrvtime = getSystemTime();
         file = fopen(filename, "a"); // append
         if(file != -1) {
             line = "";
             line += bannedip;
-            line += "%%" + bannedby;
-            line += "%%" + bannedname;
-            line += "%%" + time;
-            line += "%%" + bannedsrvtime;
-            line += "%%" + bannedreason;
+            line += "%" + bannedby;
+            line += "%" + bannedname;
+            line += "%" + time;
+            line += "%" + bannedsrvtime;
+            line += "%" + bannedreason;
             line += "\n";
-            fwrite(line, file);
+            fwrite(file, line);
         }
         fclose(file);
 
@@ -1575,7 +1568,7 @@ cmd_unban(args)
 
         level.banactive = true;
         filename = level.workingdir + level.banfile;
-        if(fexists(filename)) {
+        if(file_exists(filename)) {
             file = fopen(filename, "w");
             if(file != -1) {
                 for(i = 0; i < level.bans.size; i++) {
@@ -1583,13 +1576,13 @@ cmd_unban(args)
                         continue;
                     line = "";
                     line += level.bans[i]["ip"];
-                    line += "%%" + level.bans[i]["by"];
-                    line += "%%" + level.bans[i]["name"];
-                    line += "%%" + level.bans[i]["time"];
-                    line += "%%" + level.bans[i]["srvtime"];
-                    line += "%%" + level.bans[i]["reason"];
+                    line += "%" + level.bans[i]["by"];
+                    line += "%" + level.bans[i]["name"];
+                    line += "%" + level.bans[i]["time"];
+                    line += "%" + level.bans[i]["srvtime"];
+                    line += "%" + level.bans[i]["reason"];
                     line += "\n";
-                    fwrite(line, file);
+                    fwrite(file, line);
                 }
             }
             fclose(file);
@@ -1658,18 +1651,18 @@ cmd_report(args)
     reportreason = jumpmod\functions::namefix(args2); // To prevent malicious input
     level.reportactive = true;
     filename = level.workingdir + level.reportfile;
-    if(fexists(filename)) {
+    if(file_exists(filename)) {
         file = fopen(filename, "a"); // append
         if(file != -1) {
             line = "";
             line += jumpmod\functions::namefix(self.name);
-            line += "%%" + self getip();
-            line += "%%" + jumpmod\functions::namefix(player.name);
-            line += "%%" + player getip();
-            line += "%%" + reportreason;
-            line += "%%" + seconds();
+            line += "%" + self getip();
+            line += "%" + jumpmod\functions::namefix(player.name);
+            line += "%" + player getip();
+            line += "%" + reportreason;
+            line += "%" + getSystemTime();
             line += "\n";
-            fwrite(line, file);
+            fwrite(file, line);
         }
 
         fclose(file);
@@ -4015,102 +4008,100 @@ cmd_banlist(args)
 cmd_reportlist(args) // format: <reported by>%<reported by IP>%<reported user>%<reported user IP>%<report message>&<unixtime>
 {
     filename = level.workingdir + level.reportfile;
-    if(fexists(filename)) {
-        file = fopen(filename, "r");
-        if(file != -1)
-            data = fread(0, file); // codextended.so bug?
-        fclose(file); // all-in-one chunk
+    if(!file_exists(filename)) {
+        return;
+    }
 
-        if(isDefined(data)) {
-            reports = [];
-            data = jumpmod\functions::strTok(data, "\n");
-            for(i = 0; i < data.size; i++) {
-                if(!isDefined(data[i])) // crashed here for some odd reason? this should never happen
-                    continue; // crashed here for some odd reason? this should never happen
-
-                line = jumpmod\functions::strTok(data[i], "%"); // crashed here for some odd reason? this should never happen
-                if(line.size != 6)
-                    continue;
-
-                reportfile_error = false;
-                for(l = 0; l < line.size; l++) {
-                    if(!isDefined(line[l])) {
-                        reportfile_error = true;
-                        break;
-                    }
-                }
-
-                if(reportfile_error)
-                    continue;
-
-                reportedby = line[0];
-                reportedbyip = line[1];
-                reporteduser = jumpmod\functions::strip(line[2]);
-                reporteduserip = line[3];
-                reportedmessage = jumpmod\functions::strip(line[4]);
-                reportedunixtime = line[5];
-
-                index = reports.size;
-                reports[index]["by"] = reportedby;
-                reports[index]["byip"] = reportedbyip;
-                reports[index]["user"] = reporteduser;
-                reports[index]["userip"] = reporteduserip;
-                reports[index]["message"] = reportedmessage;
-                reports[index]["unixtime"] = reportedunixtime;
-            }
-
-            if(reports.size > 0) {
-                limit = getCvarInt("scr_mm_reportlist_limit");
-                if(limit == 0)
-                    limit = 30;
-
-                offset = 0;
-                if(reports.size - limit > 0)
-                    offset = reports.size - limit;
-
-                pdata = spawnStruct();
-                pdata.by = 0;
-                pdata.byip = 0;
-                pdata.user = 0;
-                pdata.userip = 0;
-                pdata.message = 0;
-
-                for(i = offset; i < reports.size; i++) {
-                    if(reports[i]["by"].size > pdata.by)
-                        pdata.by = reports[i]["by"].size;
-                    if(reports[i]["byip"].size > pdata.byip)
-                        pdata.byip = reports[i]["byip"].size;
-                    if(reports[i]["user"].size > pdata.user)
-                        pdata.user = reports[i]["user"].size;
-                    if(reports[i]["userip"].size > pdata.userip)
-                        pdata.userip = reports[i]["userip"].size;
-                    if(reports[i]["message"].size > pdata.message)
-                        pdata.message = reports[i]["message"].size;
-                }
-
-                for(i = offset; i < reports.size; i++) {
-                    message = "^2[^7 ";
-                    if(self.pers["mm_ipaccess"])
-                        message += reports[i]["byip"] + spaces(pdata.byip - reports[i]["byip"].size) + " ^2|^7 ";
-                    message += reports[i]["by"] + spaces(pdata.by - reports[i]["by"].size) + "^2] ^7reported";
-                    message_player(message);
-                    message = "^1[^7 ";
-                    if(self.pers["mm_ipaccess"])
-                        message += reports[i]["userip"] + spaces(pdata.userip - reports[i]["userip"].size) + " ^1|^7 ";
-                    message += reports[i]["user"] + spaces(pdata.user - reports[i]["user"].size) + "^1] ^7for";
-                    message_player(message);
-                    message = "^3reason>^7 " + reports[i]["message"];
-                    message_player(message);
-                    if((i + 1) % 5 == 0) // Prevent: SERVERCOMMAND OVERFLOW
-                        wait 0.25;
-                }
-
-                if(offset > 0)
-                    message_player("More than " + limit + " reports in the reportlist. Showing the " + limit + " most recent reports.");
-            } else
-                message_player("^1ERROR: ^7No reports in reportlist.");
+    data = "";
+    file = fopen(filename, "r");
+    if(isDefined(file)) {
+        chunk = fread(file);
+        while(isDefined(chunk)) {
+            data += chunk;
+            chunk = fread(file);
         }
     }
+    fclose(file);
+
+    if(data == "") {
+        return;
+    }
+
+    reports = [];
+    data = jumpmod\functions::strTok(data, "\n");
+    for(i = 0; i < data.size; i++) {
+        line = jumpmod\functions::strTok(data[i], "%"); // crashed here for some odd reason? this should never happen
+        if(line.size != 6) {
+            jumpmod\functions::mmlog("reportfile;error;line != 6");
+            continue;
+        }
+
+        reportedby = line[0];
+        reportedbyip = line[1];
+        reporteduser = jumpmod\functions::strip(line[2]);
+        reporteduserip = line[3];
+        reportedmessage = jumpmod\functions::strip(line[4]);
+        reportedunixtime = line[5];
+
+        index = reports.size;
+        reports[index]["by"] = reportedby;
+        reports[index]["byip"] = reportedbyip;
+        reports[index]["user"] = reporteduser;
+        reports[index]["userip"] = reporteduserip;
+        reports[index]["message"] = reportedmessage;
+        reports[index]["unixtime"] = reportedunixtime;
+    }
+
+    if(reports.size > 0) {
+        limit = getCvarInt("scr_mm_reportlist_limit");
+        if(limit == 0)
+            limit = 30;
+
+        offset = 0;
+        if(reports.size - limit > 0)
+            offset = reports.size - limit;
+
+        pdata = spawnStruct();
+        pdata.by = 0;
+        pdata.byip = 0;
+        pdata.user = 0;
+        pdata.userip = 0;
+        pdata.message = 0;
+
+        for(i = offset; i < reports.size; i++) {
+            if(reports[i]["by"].size > pdata.by)
+                pdata.by = reports[i]["by"].size;
+            if(reports[i]["byip"].size > pdata.byip)
+                pdata.byip = reports[i]["byip"].size;
+            if(reports[i]["user"].size > pdata.user)
+                pdata.user = reports[i]["user"].size;
+            if(reports[i]["userip"].size > pdata.userip)
+                pdata.userip = reports[i]["userip"].size;
+            if(reports[i]["message"].size > pdata.message)
+                pdata.message = reports[i]["message"].size;
+        }
+
+        for(i = offset; i < reports.size; i++) {
+            message = "^2[^7 ";
+            if(self.pers["mm_ipaccess"])
+                message += reports[i]["byip"] + spaces(pdata.byip - reports[i]["byip"].size) + " ^2|^7 ";
+            message += reports[i]["by"] + spaces(pdata.by - reports[i]["by"].size) + "^2] ^7reported";
+            message_player(message);
+            message = "^1[^7 ";
+            if(self.pers["mm_ipaccess"])
+                message += reports[i]["userip"] + spaces(pdata.userip - reports[i]["userip"].size) + " ^1|^7 ";
+            message += reports[i]["user"] + spaces(pdata.user - reports[i]["user"].size) + "^1] ^7for";
+            message_player(message);
+            message = "^3reason>^7 " + reports[i]["message"];
+            message_player(message);
+            if((i + 1) % 5 == 0) // Prevent: SERVERCOMMAND OVERFLOW
+                wait 0.25;
+        }
+
+        if(offset > 0)
+            message_player("More than " + limit + " reports in the reportlist. Showing the " + limit + " most recent reports.");
+    } else
+        message_player("^1ERROR: ^7No reports in reportlist.");
 }
 
 cmd_namechange(args)
