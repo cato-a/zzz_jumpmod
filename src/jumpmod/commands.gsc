@@ -457,9 +457,9 @@ _loadBans()
         level.bans[index]["reason"] = bannedreason;
     }
 
-    if(level.bans.size != numbans) { // banfile changed, update miscmod_bans.dat
+    if(level.bans.size > 0 && level.bans.size != numbans) { // banfile changed, update miscmod_bans.dat
         file = fopen(filename, "w");
-        if(level.bans.size > 0) {
+        if(isDefined(file)) {
             for(i = 0; i < level.bans.size; i++) {
                 line = "";
                 line += level.bans[i]["ip"];
@@ -1460,7 +1460,7 @@ cmd_ban(args)
 
         bannedsrvtime = getSystemTime();
         file = fopen(filename, "a"); // append
-        if(file != -1) {
+        if(isDefined(file)) {
             line = "";
             line += bannedip;
             line += "%" + bannedby;
@@ -1570,7 +1570,7 @@ cmd_unban(args)
         filename = level.workingdir + level.banfile;
         if(file_exists(filename)) {
             file = fopen(filename, "w");
-            if(file != -1) {
+            if(isDefined(file)) {
                 for(i = 0; i < level.bans.size; i++) {
                     if(level.bans[i]["ip"] == "unbanned")
                         continue;
@@ -1653,7 +1653,7 @@ cmd_report(args)
     filename = level.workingdir + level.reportfile;
     if(file_exists(filename)) {
         file = fopen(filename, "a"); // append
-        if(file != -1) {
+        if(isDefined(file)) {
             line = "";
             line += jumpmod\functions::namefix(self.name);
             line += "%" + self getip();
