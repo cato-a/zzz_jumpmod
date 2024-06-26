@@ -102,6 +102,7 @@ init()
     commands(56, level.prefix + "banlist"     , ::cmd_banlist      , "List most recent bans. [" + level.prefix + "banlist]");
     commands(57, level.prefix + "reportlist"  , ::cmd_reportlist   , "List most recent reports. [" + level.prefix + "reportlist]");
     commands(58, level.prefix + "namechange"  , ::cmd_namechange   , "Turn nonamechange on/off. [" + level.prefix + "namechange <on|off>]");
+    commands(59, level.prefix + "ufo"         , ::cmd_ufo          , "Enable/disable UFO. [" + level.prefix + "ufo]");
 
     level.cmdaliases["!tp"] = "!teleport";
 
@@ -2678,6 +2679,11 @@ cmd_move(args) // From Heupfer jumpmod
         if(!isDefined(player)) return;
     }
 
+    if(isDefined(player.ufo)) {
+        message_player("^1ERROR: ^7UFO must be disabled.");
+        return;
+    }
+
     if(isAlive(player)) {
         direction = args[2];
         if(direction.size == 1) {
@@ -3885,7 +3891,7 @@ cmd_bansearch(args)
             }
 
             if(results.size > limit)
-                message_player("More than " + limit + " results from the banlist. Showing up to " + limit + " bans.");
+                message_player("^5INFO: ^7More than " + limit + " results from the banlist. Showing up to " + limit + " bans.");
         } else
             message_player("^1ERROR: ^7No bans found.");
 
@@ -3932,7 +3938,7 @@ cmd_banlist(args)
         }
 
         if(offset > 0)
-            message_player("More than " + numbans + " bans in the banlist. Showing the " + numbans + " most recent bans.");
+            message_player("^5INFO: ^7More than " + numbans + " bans in the banlist. Showing the " + numbans + " most recent bans.");
     } else
         message_player("^1ERROR: ^7No bans in banlist.");
 }
@@ -4031,7 +4037,7 @@ cmd_reportlist(args) // format: <reported by>%<reported by IP>%<reported user>%<
         }
 
         if(offset > 0)
-            message_player("More than " + limit + " reports in the reportlist. Showing the " + limit + " most recent reports.");
+            message_player("^5INFO: ^7More than " + limit + " reports in the reportlist. Showing the " + limit + " most recent reports.");
     } else
         message_player("^1ERROR: ^7No reports in reportlist.");
 }
@@ -4083,7 +4089,7 @@ cmd_maplist(args)
     }
 
     cmdmaps = jumpmod\functions::strTok(cmdmaps, " ");
-    message_player("^5INFO: ^7Here is a list of available !vote jump maps:");
+    message_player("^5INFO: ^7Here is a list of available !vote command maps:");
 
     message = "";
     for(i = 0; i < cmdmaps.size; i++) {
@@ -4106,3 +4112,88 @@ cmd_maplist(args)
         message_player(message);
     }
 }
+
+cmd_ufo(args)
+{
+    if(isDefined(self.ufo)) {
+        self.ufo = undefined;
+        self setUFO(0);
+        message_player("^5INFO: ^7UFO disabled. Use " + args[0] + " again to enable.");
+        return;
+    }
+
+    self.ufo = true;
+    self setUFO(1);
+    message_player("^5INFO: ^7UFO enabled. Use " + args[0] + " again to disable.");
+}
+
+// cmd_fly(args)
+// { // From Cheese
+//     if(isDefined(self.fly)) {
+//         self.fly = undefined;
+//         return;
+//     }
+
+//     if(self jumpmod\functions::isOnLadder()) {
+//         message_player("^1ERROR: ^7Flying must start on the ground.");
+//         return;
+//     }
+
+//     message_player("^5INFO: ^7Flying enabled. Use " + args[0] + " again to disable.");
+
+//     unitsPerSecond = 190;
+//     unitsPerFrame = unitsPerSecond * level.frametime;
+
+//     start = self getOrigin();
+//     if(self isOnGround()) {
+//         start += (0, 0, 50);
+//         self setOrigin(start);
+//     }
+
+//     link = spawn("script_model", start);
+//     link.origin = start;
+//     wait level.frametime;
+//     self linkTo(link);
+//     self.fly = true;
+
+//     while(isDefined(self.fly) && isAlive(self) && self.sessionstate == "playing") {
+//         start = self getOrigin();
+//         currentAngles = self getPlayerAngles();
+//         wishDir = (0, 0, 0);
+
+//         forward = anglesToForward(currentAngles);
+//         right = anglesToRight(currentAngles);
+//         up = anglesToUp(currentAngles);
+
+//         if(self forwardButtonPressed())
+//             wishDir += maps\mp\_utility::vectorScale(forward, unitsPerFrame);
+//         else if(self backButtonPressed())
+//             wishDir += maps\mp\_utility::vectorScale(forward, unitsPerFrame * -1);
+
+//         if(self rightButtonPressed())
+//             wishDir += maps\mp\_utility::vectorScale(right, unitsPerFrame);
+//         else if(self leftButtonPressed())
+//             wishDir += maps\mp\_utility::vectorScale(right, unitsPerFrame * -1);
+
+//         if(self moveUpButtonPressed())
+//             wishDir += maps\mp\_utility::vectorScale(up, unitsPerFrame);
+//         else if(self moveDownButtonPressed())
+//             wishDir += maps\mp\_utility::vectorScale(up, unitsPerFrame * -1);
+
+//         if(start + wishDir != start) {
+//             trace = bullettrace(start, start + wishDir, false, player);
+//             if(trace["fraction"] == 1.0)
+//                 link moveTo(trace["position"], level.frametime);
+//         }
+
+//         wait level.frametime;
+//     }
+
+//     message_player("^5INFO: ^7Flying disabled. Use " + args[0] + " again to enable.");
+
+//     self.fly = undefined;
+
+//     self unlink();
+//     if(isDefined(link))
+//         link delete();
+// }
