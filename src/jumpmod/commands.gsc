@@ -162,7 +162,11 @@ command(str)
     isloggedin = (bool)isDefined(self.pers["mm_group"]);
     cmd = jumpmod\functions::strTok(str, " "); // is a command with level.prefix
 
-    if(isDefined(level.commands[cmd[0]])) {
+    command = cmd[0]; // !something
+    if(isDefined(level.cmdaliases[command]))
+        command = level.cmdaliases[command];
+
+    if(isDefined(level.commands[command])) {
         perms = level.perms["default"];
 
         cmduser = "none";
@@ -174,7 +178,6 @@ command(str)
             perms = jumpmod\functions::array_join(perms, level.perms[cmdgroup]);
         }
 
-        command = cmd[0]; // !something
         if(command != "!login") {
             commandargs = "";
             for(i = 1; i < cmd.size; i++) {
@@ -196,7 +199,8 @@ command(str)
             message_player("^1ERROR: ^7Access denied.");
         else
             message_player("^1ERROR: ^7No such command. Check your spelling.");
-    }
+    } else
+        message_player("^1ERROR: ^7No such command. Check your spelling.");
 }
 
 command_mute(str)
