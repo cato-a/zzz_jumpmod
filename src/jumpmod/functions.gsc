@@ -432,3 +432,13 @@ numdigits(num)
 {
     return (num + "").size;
 }
+
+is_point_in_AABB(point, box) {
+    return point[0] >= box[0][0] && point[0] <= box[1][0]
+        && point[1] >= box[0][1] && point[1] <= box[1][1]
+        && point[2] >= box[0][2] && point[2] <= box[1][2];
+}
+
+to_string_aabb(box) {
+    return "Box (" + box[0][0] + ", " + box[0][1] + ", " + box[0][2] + "), (" + box[1][0] + ", " + box[1][1] + ", " + box[1][2] + ")";
+}

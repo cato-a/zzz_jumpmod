@@ -394,6 +394,11 @@ jmpSavePosition()
         || (currentslot == "none" && !(self jumpmod\functions::isOnLadder())))
         return;
 
+    if(isDefined(self.save_disabled) && self.save_disabled) {
+        self iPrintLn("^1Saving is disabled."); // This incident will be reported. ;)
+        return;
+    }
+
     self.tmp_arr = []; // Temporary array
     self.score++; // Count saves on scoreboard
 
@@ -452,6 +457,11 @@ jmpLoadPosition()
             self iPrintLn("^1Your backup position #" + self.load_index + " is ^2loaded^1.");
 
         self.load_index++; // Update the load_index
+
+        if(isDefined(self.save_disabled) && self.save_disabled) {
+        	self.save_disabled = false;
+        	self iPrintLn("^1Saving ^2enabled!");
+    	}
     }
 }
 
@@ -636,6 +646,11 @@ spawnPlayer()
         self setClientCvar("r_swapInterval", 0); // Sync Every Frame = "No"
         thread jumpmod\miscmod::welcome_display();
     }
+
+    if(isDefined(self.save_disabled) && self.save_disabled) {
+        self.save_disabled = false;
+        self iPrintLn("^1Saving ^2enabled!");
+    }
 }
 
 spawnSpectator()
@@ -699,6 +714,8 @@ mapfixes()
 
     maxdistunits = 50;
     ladderjumps = level.mapsettings["ladderjumps"];
+    save_disable_aabb = level.mapsettings["save_disable_aabb"];
+    save_enable_aabb = level.mapsettings["save_enable_aabb"];
 
     healspots = level.mapsettings["healspots"];
     if(isDefined(healspots)) {
@@ -805,6 +822,30 @@ mapfixes()
                             players[i] setWeaponSlotAmmo("primaryb", 1);
                             players[i] switchToWeapon("panzerfaust_mp");
                             players[i] iPrintLn("You've been given a Panzerfaust!");
+                        }
+                    }
+                }
+            }
+
+            if(isDefined(save_disable_aabb)) { // Save disable areas
+                for(l = 0; l < save_disable_aabb.size; l++) {
+                    if(isAlive(players[i]) && players[i].sessionstate == "playing") {
+                        if(!(isDefined(players[i].save_disabled) && players[i].save_disabled)
+                            && jumpmod\functions::is_point_in_AABB(players[i].origin, save_disable_aabb[l])) {
+                                players[i].save_disabled = true;
+                                players[i] iPrintLn("^1Saving ^2disabled!");
+                        }
+                    }
+                }
+            }
+
+            if(isDefined(save_enable_aabb)) { // Save enable areas
+                for(l = 0; l < save_enable_aabb.size; l++) {
+                    if(isAlive(players[i]) && players[i].sessionstate == "playing") {
+                        if(isDefined(players[i].save_disabled) && players[i].save_disabled
+                            && jumpmod\functions::is_point_in_AABB(players[i].origin, save_enable_aabb[l])) {
+                                players[i].save_disabled = false;
+                                players[i] iPrintLn("^1Saving ^2enabled!");
                         }
                     }
                 }
