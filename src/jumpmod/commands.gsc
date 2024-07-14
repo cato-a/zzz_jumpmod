@@ -26,7 +26,7 @@ init()
     level.reportfile = "miscmod_reports.dat";
 
     if(!isDefined(level.perms["default"]))
-        level.perms["default"] = jumpmod\functions::strTok("0-3:5-6:18:33-35:37:53-54", ":"); // pff xD
+        level.perms["default"] = jumpmod\functions::strTok("0-3:5-6:18:33-35:37:53-54:60", ":"); // pff xD
 
     level.prefix = "!";
     if(getCvar("scr_mm_cmd_prefix") != "")
@@ -103,8 +103,10 @@ init()
     commands(57, level.prefix + "reportlist"  , ::cmd_reportlist   , "List most recent reports. [" + level.prefix + "reportlist]");
     commands(58, level.prefix + "namechange"  , ::cmd_namechange   , "Turn nonamechange on/off. [" + level.prefix + "namechange <on|off>]");
     commands(59, level.prefix + "ufo"         , ::cmd_ufo          , "Enable/disable UFO. [" + level.prefix + "ufo]");
+    commands(60, level.prefix + "quickrespawn", ::cmd_quickrespawn , "Turn on/off quick respawn. [" + level.prefix + "quickrespawn]");
 
     level.cmdaliases["!tp"] = "!teleport";
+    level.cmdaliases["!quickres"] = "!quickrespawn";
 
     level.voteinprogress = getTime(); // !vote command
     thread _loadBans(); // reload bans from dat file every round
@@ -2532,7 +2534,7 @@ cmd_gps_run(cmd) // not a command :P
         message_player("^5INFO: ^7The GPS will be visible when you are alive.");
 
     x = 550;
-    y = 30;
+    y = 50;
     while(true) {
         while(self.sessionstate != "playing")
             wait 0.5;
@@ -4201,3 +4203,15 @@ cmd_ufo(args)
 //     if(isDefined(link))
 //         link delete();
 // }
+
+cmd_quickrespawn(args)
+{
+    if(isDefined(self.quickrespawn)) {
+        self.quickrespawn = undefined;
+        message_player("^5INFO: ^7Quick respawn turned off. Use " + args[0] + " again to turn on.");
+        return;
+    }
+
+    self.quickrespawn = true;
+    message_player("^5INFO: ^7Quick respawn turned on. Use " + args[0] + " again to turn off.");
+}

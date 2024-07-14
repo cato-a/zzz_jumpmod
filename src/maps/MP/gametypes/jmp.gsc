@@ -360,7 +360,10 @@ Callback_PlayerKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDi
     self.statusicon = "gfx/hud/hud@status_dead.tga";
     self.deaths++;
 
-    wait 2;
+    if(isDefined(self.quickrespawn))
+        wait 0.05;
+    else
+        wait 2;
 
     self thread spawnPlayer();
 }
@@ -607,17 +610,26 @@ spawnPlayer()
     if(isDefined(self.replay))
         jumpmod\commands::cmd_replay_cleanup();
 
-    spawnpointname = "mp_deathmatch_spawn";
-    spawnpoints = getEntArray(spawnpointname, "classname");
-    spawnpoint = maps\mp\gametypes\_spawnlogic::getSpawnpoint_Random(spawnpoints);
-    if(isDefined(spawnpoint)) {
-        if(positionWouldTelefrag(spawnpoint.origin)) {
-            self iPrintLn("^1ERROR:^7 Bad spawnpoint finding new, please wait.");
-            spawnpoint = self jumpmod\functions::_newspawn(spawnpoint);
-        }
+    if(isDefined(self.quickrespawn) && self.save_array.size > 0) {
+        _spawnpoint = spawnStruct();
+        _spawnpoint.origin = self.save_array[0]["origin"];
+        _spawnpoint.angles = self.save_array[0]["angles"];
+    }
 
-        self spawn(spawnpoint.origin, spawnpoint.angles);
-    } else
+    if(!isDefined(_spawnpoint) || positionWouldTelefrag(_spawnpoint.origin) || !jumpmod\functions::_canspawnat(_spawnpoint.origin)) {
+        spawnpointname = "mp_deathmatch_spawn";
+        spawnpoints = getEntArray(spawnpointname, "classname");
+        _spawnpoint = maps\mp\gametypes\_spawnlogic::getSpawnpoint_Random(spawnpoints);
+    }
+
+    if(isDefined(_spawnpoint) && (positionWouldTelefrag(_spawnpoint.origin) || !jumpmod\functions::_canspawnat(_spawnpoint.origin))) {
+        self iPrintLn("^1ERROR:^7 Bad spawnpoint finding new, please wait.");
+        _spawnpoint = self jumpmod\functions::_newspawn(_spawnpoint);
+    } 
+    
+    if(isDefined(_spawnpoint))
+        self spawn(_spawnpoint.origin, _spawnpoint.angles);
+    else
         maps\mp\_utility::error("NO " + spawnpointname + " SPAWNPOINTS IN MAP");
 
     self.statusicon = game["statusicon_" + game[self.pers["team"]]];
@@ -856,7 +868,8 @@ mmKeys()
                 case "mm":
                     while(!(self isOnGround()) && !(self jumpmod\functions::isOnLadder()))
                         wait 0.05; // wait till player is on ground or on a ladder when issuing this command
-                    self thread jmpSavePosition();
+                    if(isAlive(self) && self.sessionstate == "playing")
+                        self thread jmpSavePosition();
                     reset = true;
                 break;
                 case "uu":
@@ -875,15 +888,17 @@ mmKeys()
 
 jmpDisplayPlayerFps()
 { // Thanks Raphael
-    self.hud_fps = newClientHudElem(self);
-    self.hud_fps.sort = -1;
-    self.hud_fps.x = 540;
-    self.hud_fps.y = 25;
-    self.hud_fps.fontScale = 0.8;
-    self.hud_fps.color = (1, 1, 0);
-    self.hud_fps.label = &"FPS: ";
+    if(!isDefined(self.hud_fps)) {
+        self.hud_fps = newClientHudElem(self);
+        self.hud_fps.sort = -1;
+        self.hud_fps.x = 540;
+        self.hud_fps.y = 25;
+        self.hud_fps.fontScale = 0.8;
+        self.hud_fps.color = (1, 1, 0);
+        self.hud_fps.label = &"FPS: ";
+    }
 
-    while(self.sessionstate == "playing") {
+    while(isAlive(self) && self.sessionstate == "playing") {
         self.hud_fps setValue(self getFPS());
         wait 0.25;
     }
