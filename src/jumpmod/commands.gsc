@@ -104,6 +104,7 @@ init()
     commands(58, level.prefix + "namechange"  , ::cmd_namechange   , "Turn nonamechange on/off. [" + level.prefix + "namechange <on|off>]");
     commands(59, level.prefix + "ufo"         , ::cmd_ufo          , "Enable/disable UFO. [" + level.prefix + "ufo]");
     commands(60, level.prefix + "quickrespawn", ::cmd_quickrespawn , "Turn on/off quick respawn. [" + level.prefix + "quickrespawn]");
+    commands(61, level.prefix + "speedrun"    , ::cmd_speedrun     , "Enable/disable speedrun mode. [" + level.prefix + "speedrun]");
 
     level.cmdaliases["!tp"] = "!teleport";
     level.cmdaliases["!quickres"] = "!quickrespawn";
@@ -148,6 +149,7 @@ precache()
     precacheString(&"change the map");
     precacheString(&"end the map");
     precacheString(&"Vote to");
+    precacheString(&"Speedrun mode enabled");
 }
 
 commands(id, cmd, func, desc)
@@ -2832,6 +2834,11 @@ cmd_retry_clear(origin, angles) // not a cmd
     if(isDefined(self.save_array))
         self.save_array = [];
 
+    if(isDefined(level.speedrunmode)) {
+        self suicide();
+        return;
+    }
+
     if(isAlive(self) && self.sessionstate == "playing") {
         self.nodamage = true;
         self setPlayerAngles(angles);
@@ -4214,4 +4221,52 @@ cmd_quickrespawn(args)
 
     self.quickrespawn = true;
     message_player("^5INFO: ^7Quick respawn turned on. Use " + args[0] + " again to turn off.");
+}
+
+cmd_speedrun(args)
+{
+    if(isDefined(level.speedrunmode)) {
+        level.speedrunmode = undefined;
+        message_player("^5INFO: ^7Speedrun mode disabled. Use " + args[0] + " again to enable.");
+        if(isDefined(level.speedrunhud)) {
+            level.speedrunhud destroy();
+        }
+
+        return;
+    }
+
+    level.speedrunmode = true;
+
+    time = args[1];
+    if(isDefined(time) && jumpmod\functions::validate_number(time, true)) {
+        time = (float)time;
+        if(time > 5)
+            time = 5;
+    } else
+        time = 1;
+
+    time = (int)(time * 1000);
+    if(time < 100)
+        time = 100;
+
+    level.speedruntimelimit = time;
+
+    message("^5INFO: ^7Speedrun mode enabled (" + level.speedruntimelimit + "ms). Use " + args[0] + " again to disable.");
+
+    if(!isDefined(level.speedrunhud)) {
+        level.speedrunhud = newHudElem();
+        level.speedrunhud.sort = -1;
+        level.speedrunhud.x = 504;
+        level.speedrunhud.y = 390;
+        level.speedrunhud.fontScale = 1;
+        level.speedrunhud.color = (1, 0.2, 0);
+        level.speedrunhud.label = &"Speedrun mode enabled";
+    }
+
+    iPrintLnBold("Speedrun enabled");
+
+    players = getEntArray("player", "classname");
+    for(i = 0; i < players.size; i++)
+        if(isAlive(players[i]) && players[i].sessionstate == "playing")
+            players[i] suicide();
 }

@@ -146,6 +146,7 @@ Callback_StartGameType()
     precacheHeadIcon("gfx/hud/hud@health_cross.tga");
 
     precacheString(&"FPS: ");
+    precacheString(&"0s");
 
     jumpmod\mapvote::init();
     jumpmod\commands::precache();
@@ -360,6 +361,9 @@ Callback_PlayerKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDi
     self.statusicon = "gfx/hud/hud@status_dead.tga";
     self.deaths++;
 
+    if(isDefined(level.speedrunmode) && isDefined(self.speedrunmode))
+        self jmpSpeedRunModeReset();
+
     if(isDefined(self.quickrespawn))
         wait 0.05;
     else
@@ -393,6 +397,11 @@ jmpAntiblock()
 
 jmpSavePosition()
 {
+    if(isDefined(level.speedrunmode)) {
+        self iPrintLn("^1Saving is ^2disabled^1 during speedrun mode.");
+        return;
+    }
+
     currentslot = jumpmod\functions::getWeaponSlot(self getCurrentWeapon());
     if((currentslot == "primary" || currentslot == "primaryb")
         || (currentslot == "none" && !(self jumpmod\functions::isOnLadder())))
@@ -644,6 +653,8 @@ spawnPlayer()
     self thread jmpAntiblock();
     self thread jmpWeapons();
     self thread jmpDisplayPlayerFps();
+    if(isDefined(level.speedrunmode))
+        self thread jmpSpeedRunMode(_spawnpoint);
 
     if(!isDefined(self.firstspawn)) {
         self.firstspawn = true;
@@ -906,4 +917,116 @@ jmpDisplayPlayerFps()
     if(isDefined(self.hud_fps)) {
         self.hud_fps destroy();
     }
+}
+
+jmpSpeedRunMode(spawnpoint)
+{
+    self endon("spawned");
+
+    if(!isDefined(spawnpoint))
+        return;
+
+    timer_upd = 0;
+    while(isDefined(level.speedrunmode) && isAlive(self) && self.sessionstate == "playing") {
+        if(!isDefined(self.speedrunmode) && distance(self.origin, spawnpoint.origin) > 100) {
+            self.speedrunmode = getTime();
+            self thread jmpSpeedRunModeClientHuds("create");
+            prevpos = self.origin;
+            timer_pos = getTime();
+        }
+
+        waitval = 0.05;
+        wait waitval;
+
+        if(!isDefined(self.speedrunmode))
+            continue;
+
+        timer_upd += (int)(waitval * 1000);
+        if(timer_upd % 1000 == 0) {
+            self thread jmpSpeedRunModeClientHuds("update");
+            timer_upd = 0;
+        }
+
+        gettime = getTime();
+        if(gettime - timer_pos >= level.speedruntimelimit) {
+            self jmpSpeedRunModeReset();
+            self suicide();
+            break;
+        }
+
+        if(self.origin != prevpos)
+            timer_pos = gettime;
+
+        prevpos = self.origin;
+    }
+}
+
+jmpSpeedRunModeClientHuds(mode)
+{
+    if(!isDefined(mode))
+        mode = "cleanup";
+
+    switch(mode) {
+        case "create":
+            if(!isDefined(self.speedrunclienthud1)) {
+                self.speedrunclienthud1 = newClientHudElem(self);
+                self.speedrunclienthud1.sort = -1;
+                self.speedrunclienthud1.x = 5;
+                self.speedrunclienthud1.y = 465;
+                self.speedrunclienthud1.fontScale = 1;
+                self.speedrunclienthud1.color = (1, 1, 0);
+                self.speedrunclienthud1 setText(&"0s");
+            }
+        break;
+
+        case "update":
+            if(isDefined(self.speedrunclienthud1)) {
+                timeconcat = self jmpSpeedRunModeTimeConcat();
+                timeconcat = makeLocalizedString(timeconcat);
+                self.speedrunclienthud1 setText(timeconcat);
+            }
+        break;
+
+        case "cleanup":
+            if(isDefined(self.speedrunclienthud1))
+                self.speedrunclienthud1 destroy();
+        break;
+    }
+}
+
+jmpSpeedRunModeReset()
+{
+    jumpmod\commands::message(jumpmod\functions::namefix(self.name) + "^7 was active for " + self jmpSpeedRunModeTimeConcat());
+    self.deaths = self.score; // (int)((getTime() - self.speedrunmode) / 1000.0)
+    self.speedrunmode = undefined;
+    self thread jmpSpeedRunModeClientHuds("cleanup");
+}
+
+jmpSpeedRunModeTimeConcat()
+{
+    elapsed_time = (int)((getTime() - self.speedrunmode) / 1000.0);
+    self.score = elapsed_time;
+
+    h = (int)(elapsed_time / 3600);
+    m = (int)(elapsed_time / 60 % 60); // Left to right precedence
+    s = (int)(elapsed_time % 60);
+
+    timeconcat = "";
+
+    if(h > 0) {
+        timeconcat += h + "h";
+        if(m > 0 || s > 0)
+            timeconcat += " ";
+    }
+
+    if(m > 0) {
+        timeconcat += m + "m";
+        if(s > 0)
+            timeconcat += " ";
+    }
+
+    if(s > 0)
+        timeconcat += s + "s";
+
+    return timeconcat;
 }
