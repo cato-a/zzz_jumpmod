@@ -43,6 +43,7 @@ main()
         if(level.penaltytime == 0)
             level.penaltytime = 2;
     }
+    level.save_array_max_length = 50;
 
     spawnpointname = "mp_deathmatch_spawn";
     spawnpoints = getEntArray(spawnpointname, "classname");
@@ -222,7 +223,6 @@ Callback_PlayerConnect()
     iPrintLn(jumpmod\functions::namefix(self.name) + " ^7Connected");
     self.nodamage = false;
     self.save_array = []; // Declare jumpsave array
-    self.save_array_max_length = 52;
     self.load_index = 0;
 
     self.pers["mm_chattimer"] = 0;
@@ -407,21 +407,22 @@ jmpSavePosition()
         || (currentslot == "none" && !(self jumpmod\functions::isOnLadder())))
         return;
 
-    self.tmp_arr = []; // Temporary array
     self.score++; // Count saves on scoreboard
 
+    _tmp_arr = []; // Temporary array
     for(i = 0; i < self.save_array.size; i++) { // Iterate through the array and insert the element in the original array one position forward
-        if(i == (self.save_array_max_length - 1)) // If the current element is the last in the list, do not process it
+        index = i + 1; // Temporary array index
+        if(index == level.save_array_max_length) // If the current element is the last in the list, do not process it
             break;
 
-        self.tmp_arr[i + 1]["angles"] = self.save_array[i]["angles"];
-        self.tmp_arr[i + 1]["origin"] = self.save_array[i]["origin"];
+        _tmp_arr[index]["origin"] = self.save_array[i]["origin"];
+        _tmp_arr[index]["angles"] = self.save_array[i]["angles"];
     }
 
-    self.save_array = self.tmp_arr; // Set the save_array to be equal to the temp array
+    _tmp_arr[0]["origin"] = self.origin; // Insert the new save in the first position (now cleared)
+    _tmp_arr[0]["angles"] = self getPlayerAngles();
 
-    self.save_array[0]["origin"] = self.origin; // Insert the new save in the first position (now cleared)
-    self.save_array[0]["angles"] = self getPlayerAngles();
+    self.save_array = _tmp_arr; // Set the save_array to be equal to the temporary array
 
     self iPrintLn("^1Your current position is ^2saved^1.");
     self iPrintLn("^1(^7X: ^2" + (int)self.origin[0] + "^7 Y: ^2" + (int)self.origin[1] + "^7 Z: ^2" + (int)self.origin[2] + "^1)");
@@ -434,15 +435,8 @@ jmpLoadPosition()
         return;
     }
 
-    if(self.load_index == (self.save_array_max_length - 1) || self.load_index >= self.save_array.size) // Make sure the player doesn't try to load a position outside of the save_array size
-        self.load_index = 0;
-
-    if(!isDefined(self.load_old_pos)) { // Check if load hasn't been used yet
-        self.load_index = 0;
-    } else {
-        if(distance(self.load_old_pos, self.origin) > 20) // If the player has moved more than 20 units, reset the load index back to 0
-            self.load_index = 0;
-    }
+    if(self.load_index > 0 && (self.load_index == self.save_array.size || distance(self.origin, self.save_array[self.load_index - 1]["origin"]) > 20)) // Make sure the player doesn't try to load a position outside of the save_array size
+        self.load_index = 0; // If the player has moved more than 20 units, reset the load index back to 0
 
     if(positionWouldTelefrag(self.save_array[self.load_index]["origin"])) {
         if(distance(self.origin, self.save_array[self.load_index]["origin"]) < 33) {
@@ -455,10 +449,8 @@ jmpLoadPosition()
         }
     }
 
-    self setPlayerAngles(self.save_array[self.load_index]["angles"]); // Update the player position
     self setOrigin(self.save_array[self.load_index]["origin"]);
-
-    self.load_old_pos = self.origin; // Update the old position
+    self setPlayerAngles(self.save_array[self.load_index]["angles"]); // Update the player position
 
     if(self.load_index == 0)
         self iPrintLn("^1Your saved position is ^2loaded^1.");
