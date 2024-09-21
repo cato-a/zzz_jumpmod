@@ -2774,12 +2774,11 @@ cmd_move_freeze() // not a command :D
         || self forwardButtonPressed()
         || self leftButtonPressed()
         || self rightButtonPressed()
-        || self moveupButtonPressed()
-        || self movedownButtonPressed()
         || self aimButtonPressed()
         || self reloadButtonPressed()
         || self leanLeftButtonPressed()
-        || self leanRightButtonPressed()))
+        || self leanRightButtonPressed())
+        || self jumpButtonPressed())
         wait 0.05;
 
     self cmd_move_link(true); // unlink
@@ -4130,13 +4129,13 @@ cmd_ufo(args)
 {
     if(isDefined(self.ufo)) {
         self.ufo = undefined;
-        self setUFO(0);
+        self ufo("off");
         message_player("^5INFO: ^7UFO disabled. Use " + args[0] + " again to enable.");
         return;
     }
 
     self.ufo = true;
-    self setUFO(1);
+    self ufo("on");
     message_player("^5INFO: ^7UFO enabled. Use " + args[0] + " again to disable.");
 }
 
