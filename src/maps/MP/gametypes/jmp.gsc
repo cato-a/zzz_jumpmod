@@ -423,6 +423,7 @@ jmpSavePosition()
     _tmp_arr[0]["angles"] = self getPlayerAngles();
 
     self.save_array = _tmp_arr; // Set the save_array to be equal to the temporary array
+    self.load_index = 0;
 
     self iPrintLn("^1Your current position is ^2saved^1.");
     self iPrintLn("^1(^7X: ^2" + (int)self.origin[0] + "^7 Y: ^2" + (int)self.origin[1] + "^7 Z: ^2" + (int)self.origin[2] + "^1)");
@@ -443,6 +444,13 @@ jmpLoadPosition()
             // Tillat fordi distansen mellom deg og save-posisjonen er mindre enn 33, og da
             // betyr dette med all sannsynlighet at det er deg selv som blokkerer posisjonen
             // Spilleren er 32 units bred, 72 units høy, 33 units passer da bra som distanse
+            if(self.save_array.size == 1) {
+                self iPrintLn("^1You don't have any backup positions saved.");
+                return;
+            }
+
+            if(self.save_array.size > 1 && self.load_index == 0)
+                self.load_index++;
         } else {
             self iPrintLn("^1A player is already on this position.");
             return;

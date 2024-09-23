@@ -2777,8 +2777,8 @@ cmd_move_freeze() // not a command :D
         || self aimButtonPressed()
         || self reloadButtonPressed()
         || self leanLeftButtonPressed()
-        || self leanRightButtonPressed())
-        || self jumpButtonPressed())
+        || self leanRightButtonPressed()
+        || self jumpButtonPressed()))
         wait 0.05;
 
     self cmd_move_link(true); // unlink
