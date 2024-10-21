@@ -25,22 +25,34 @@ New contributions are welcome! Please be sure to follow the [STYLE](STYLE.md) gu
 - C++ compiler w/ C++20 support
 - CMake 3.19 or higher
 
+#### Debian and variants
+
+```plaintext
+apt install zip g++ cmake
+```
+
+#### Arch Linux and variants
+
+```plaintext
+pacman -S zip gcc cmake
+```
+
 ### Build
 
 Clone repository and submodules:
-```bash
+```plaintext
 git clone --recurse-submodules https://github.com/cato-a/zzz_jumpmod
 ```
 
 Run build script:
-```bash
+```plaintext
 ./compile.sh json2gsc
 ```
 
 If process succeeded, it should produce a new `zzz_jumpmod.pk3` for you.
 
 **Note:** On subsequent runs, if you have not changed any of the `.json` config files in the `json2gsc/Assets` folder, you can simply run:
-```bash
+```plaintext
 ./compile.sh
 ```
 
