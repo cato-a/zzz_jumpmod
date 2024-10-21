@@ -10,6 +10,14 @@ if [[ "$J2G_SUBMODULE" != "$(git submodule status | cut -c '2-8')" ]]; then
     exit 1
 fi
 
+REQ_COMMANDS=('zip' 'g++' 'cmake')
+for CMD in "${REQ_COMMANDS[@]}"; do
+    if [[ ! -x "$(command -v "$CMD")" ]]; then
+        echo 'Missing executable:' "$CMD"
+        exit 1
+    fi
+done
+
 if [[ -d "$JUMPMOD_PATH" && "$(basename "$JUMPMOD_PATH")" == "$JUMPMOD_NAME" ]]; then
     if [[ "$1" == 'j2g' || "$1" == 'json2gsc' ]]; then
         if [[ ! -d "$JUMPMOD_PATH/json2gsc/Build" ]]; then
