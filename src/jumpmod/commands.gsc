@@ -108,6 +108,7 @@ init()
 
     level.cmdaliases["!tp"] = "!teleport";
     level.cmdaliases["!quickres"] = "!quickrespawn";
+    level.cmdaliases["!noclip"] = "!ufo";
 
     level.voteinprogress = getTime(); // !vote command
     thread _loadBans(); // reload bans from dat file every round

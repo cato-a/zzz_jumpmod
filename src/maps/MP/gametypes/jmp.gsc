@@ -12,8 +12,8 @@ main()
     maps\mp\gametypes\_gameobjects::main(allowed);
 
     level.timelimit = 30; // 30 minutes default
-    level.mapname = getCvar("mapname");
-    level.gametype = tolower(getCvar("g_gametype"));
+    level.mapname = tolower(GetCvar("mapname"));
+    level.gametype = tolower(GetCvar("g_gametype"));
     level.averageframes = GetCvarInt("sv_fps");
     level.frametime = 1.0 / (float)level.averageframes; // Cheese :)
     level.developer = (bool)GetCvarInt("developer");
@@ -221,7 +221,7 @@ Callback_PlayerConnect()
     self.statusicon = "";
 
     iPrintLn(jumpmod\functions::namefix(self.name) + " ^7Connected");
-    self.nodamage = false;
+    self.nodamage = false; // Used in cmd_retry_clear()
     self.save_array = []; // Declare jumpsave array
     self.load_index = 0;
 
@@ -409,20 +409,20 @@ jmpSavePosition()
 
     self.score++; // Count saves on scoreboard
 
-    _tmp_arr = []; // Temporary array
+    tmp_arr = []; // Temporary array
     for(i = 0; i < self.save_array.size; i++) { // Iterate through the array and insert the element in the original array one position forward
         index = i + 1; // Temporary array index
         if(index == level.save_array_max_length) // If the current element is the last in the list, do not process it
             break;
 
-        _tmp_arr[index]["origin"] = self.save_array[i]["origin"];
-        _tmp_arr[index]["angles"] = self.save_array[i]["angles"];
+        tmp_arr[index]["origin"] = self.save_array[i]["origin"];
+        tmp_arr[index]["angles"] = self.save_array[i]["angles"];
     }
 
-    _tmp_arr[0]["origin"] = self.origin; // Insert the new save in the first position (now cleared)
-    _tmp_arr[0]["angles"] = self getPlayerAngles();
+    tmp_arr[0]["origin"] = self.origin; // Insert the new save in the first position (now cleared)
+    tmp_arr[0]["angles"] = self getPlayerAngles();
 
-    self.save_array = _tmp_arr; // Set the save_array to be equal to the temporary array
+    self.save_array = tmp_arr; // Set the save_array to be equal to the temporary array
     self.load_index = 0;
 
     self iPrintLn("^1Your current position is ^2saved^1.");
@@ -537,26 +537,23 @@ jumpmod()
     if(level.developer)
         thread jumpmod\functions::addBotClients();
 
-    level.bounceon = (bool)(getCvar("x_cl_bounce") == "1");
     g_speed = 190;
+    level.bounceon = GetCvarInt("jump_bounceEnable") > 0;
     if(level.bounceon) {
         g_speed += 20; // 210
 
         mapspeed = GetCvar("scr_jmp_mapspeed"); // if only 220, simplify this?
-        if(mapspeed != "") {
-            mapspeed = jumpmod\functions::strTok(mapspeed, " ");
-            mapname = tolower(level.mapname);
-            for(i = 0; i < mapspeed.size; i++) {
-                _mapspeed = jumpmod\functions::strTok(mapspeed[i], ":");
-                if(mapname == _mapspeed[0]) {
-                    g_speed = (int)_mapspeed[1];
-                    break;
-                }
+        mapspeed = jumpmod\functions::strTok(mapspeed, " ");
+        for(i = 0; i < mapspeed.size; i++) {
+            tmp_mapspeed = jumpmod\functions::strTok(mapspeed[i], ":");
+            if(level.mapname == tmp_mapspeed[0]) {
+                g_speed = (int)tmp_mapspeed[1];
+                break;
             }
         }
     }
 
-    setCvar("g_speed", g_speed);
+    SetCvar("g_speed", g_speed);
 
     for(;;) {
         checkTimeLimit();
@@ -620,24 +617,24 @@ spawnPlayer()
         jumpmod\commands::cmd_replay_cleanup();
 
     if(isDefined(self.quickrespawn) && self.save_array.size > 0) {
-        _spawnpoint = spawnStruct();
-        _spawnpoint.origin = self.save_array[0]["origin"];
-        _spawnpoint.angles = self.save_array[0]["angles"];
+        tmp_spawnpoint = spawnStruct();
+        tmp_spawnpoint.origin = self.save_array[0]["origin"];
+        tmp_spawnpoint.angles = self.save_array[0]["angles"];
     }
 
-    if(!isDefined(_spawnpoint) || positionWouldTelefrag(_spawnpoint.origin) || !jumpmod\functions::_canspawnat(_spawnpoint.origin)) {
+    if(!isDefined(tmp_spawnpoint) || positionWouldTelefrag(tmp_spawnpoint.origin) || !jumpmod\functions::_canspawnat(tmp_spawnpoint.origin)) {
         spawnpointname = "mp_deathmatch_spawn";
         spawnpoints = getEntArray(spawnpointname, "classname");
-        _spawnpoint = maps\mp\gametypes\_spawnlogic::getSpawnpoint_Random(spawnpoints);
+        tmp_spawnpoint = maps\mp\gametypes\_spawnlogic::getSpawnpoint_Random(spawnpoints);
     }
 
-    if(isDefined(_spawnpoint) && (positionWouldTelefrag(_spawnpoint.origin) || !jumpmod\functions::_canspawnat(_spawnpoint.origin))) {
+    if(isDefined(tmp_spawnpoint) && (positionWouldTelefrag(tmp_spawnpoint.origin) || !jumpmod\functions::_canspawnat(tmp_spawnpoint.origin))) {
         self iPrintLn("^1ERROR:^7 Bad spawnpoint finding new, please wait.");
-        _spawnpoint = self jumpmod\functions::_newspawn(_spawnpoint);
+        tmp_spawnpoint = self jumpmod\functions::_newspawn(tmp_spawnpoint);
     } 
     
-    if(isDefined(_spawnpoint))
-        self spawn(_spawnpoint.origin, _spawnpoint.angles);
+    if(isDefined(tmp_spawnpoint))
+        self spawn(tmp_spawnpoint.origin, tmp_spawnpoint.angles);
     else
         maps\mp\_utility::error("NO " + spawnpointname + " SPAWNPOINTS IN MAP");
 
@@ -654,7 +651,7 @@ spawnPlayer()
     self thread jmpWeapons();
     self thread jmpDisplayPlayerFps();
     if(isDefined(level.speedrunmode))
-        self thread jmpSpeedRunMode(_spawnpoint);
+        self thread jmpSpeedRunMode(tmp_spawnpoint);
 
     if(!isDefined(self.firstspawn)) {
         self.firstspawn = true;
