@@ -36,14 +36,15 @@ main()
     level.mapended = false;
     level.healthqueue = [];
     level.healthqueuecurrent = 0;
+    level.save_array_max_length = 50;
     level.bans = [];
+
     level.maxmessages = GetCvarInt("scr_mm_chat_maxmessages");
     if(level.maxmessages > 0) {
         level.penaltytime = GetCvarInt("scr_mm_chat_penaltytime");
         if(level.penaltytime == 0)
             level.penaltytime = 2;
     }
-    level.save_array_max_length = 50;
 
     spawnpointname = "mp_deathmatch_spawn";
     spawnpoints = getEntArray(spawnpointname, "classname");
@@ -169,7 +170,7 @@ Callback_StartGameType()
 //             SetCvar("discord", "");
 //         }
 
-//         wait 0.05;
+//         wait level.frametime;
 //     }
 // }
 
@@ -211,7 +212,7 @@ Callback_PlayerConnect()
     if(isDefined(self.isbanned)) { // used in PlayerDisconnect
         sendCommandToClient(self getEntityNumber(), "w \"Player Banned: ^1" + bannedreason + "\"");
         self waittill("begin");
-        wait 0.05;
+        wait level.frametime;
         self dropclient("Player Banned: ^1" + bannedreason);
         return;
     }
@@ -365,7 +366,7 @@ Callback_PlayerKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDi
         self jmpSpeedRunModeReset();
 
     if(isDefined(self.quickrespawn))
-        wait 0.05;
+        wait level.frametime;
     else
         wait 2;
 
@@ -377,9 +378,13 @@ jmpAntiblock()
     self endon("spawned");
 
     blocktime = 0;
-    while(self.sessionstate == "playing") {
+    while(isAlive(self) && self.sessionstate == "playing") {
         oldpos = self.origin;
+
         wait 1;
+
+        if(!isAlive(self) || self.sessionstate != "playing")
+            break;
 
         if(distance(oldpos, self.origin) < 20) {
             blocktime++;
@@ -632,7 +637,7 @@ spawnPlayer()
         self iPrintLn("^1ERROR:^7 Bad spawnpoint finding new, please wait.");
         tmp_spawnpoint = self jumpmod\functions::_newspawn(tmp_spawnpoint);
     } 
-    
+
     if(isDefined(tmp_spawnpoint))
         self spawn(tmp_spawnpoint.origin, tmp_spawnpoint.angles);
     else
@@ -793,7 +798,7 @@ mapfixes()
                                 players[i] giveWeapon(weapon);
                                 players[i] iPrintLn("You've been given a grenade!");
                                 players[i] switchToWeapon(weapon);
-                                //wait 0.05; // TODO: optimize
+                                //wait level.frametime; // TODO: optimize
                             } else
                                 players[i] iPrintLn("Grenade replenished!");
                             players[i] setWeaponSlotAmmo("grenade", 1); // Replenish by 1, so used up
@@ -821,8 +826,9 @@ mapfixes()
                         } else {
                             if(primaryb != "none") {
                                 players[i] takeWeapon("primaryb");
-                                wait 0.05;
+                                wait level.frametime;
                             }
+
                             players[i] setWeaponSlotWeapon("primaryb", "panzerfaust_mp");
                             players[i] setWeaponSlotAmmo("primaryb", 1);
                             players[i] switchToWeapon("panzerfaust_mp");
@@ -833,7 +839,7 @@ mapfixes()
             }
         }
 
-        wait 0.05;
+        wait level.frametime;
     }
 }
 
@@ -843,39 +849,39 @@ mmKeys()
     timer = 0;
 
     for(;;) {
-        wait 0.05;
+        wait level.frametime;
 
         if(self.sessionstate != "playing")
             continue;
 
         if(self useButtonPressed()) {
             while(self useButtonPressed())
-                wait 0.05;
+                wait level.frametime;
 
             keys += "u";
          }
 
         // if(keys.size > 0 && self attackButtonPressed()) { // not in use currently
         //     while(self attackButtonPressed())
-        //         wait 0.05;
+        //         wait level.frametime;
 
         //     keys += "a";
         //  }
 
         if(self meleeButtonPressed()) {
             while(self meleeButtonPressed())
-                wait 0.05;
+                wait level.frametime;
 
             keys += "m";
          }
 
         if(keys.size > 0) {
-            timer += 0.05;
+            timer += level.frametime;
             reset = false;
             switch(keys) { // add your custom functions here for keycombos :)
                 case "mm":
                     while(!(self isOnGround()) && !(self jumpmod\functions::isOnLadder()))
-                        wait 0.05; // wait till player is on ground or on a ladder when issuing this command
+                        wait level.frametime; // wait till player is on ground or on a ladder when issuing this command
                     if(isAlive(self) && self.sessionstate == "playing")
                         self thread jmpSavePosition();
                     reset = true;
@@ -923,28 +929,27 @@ jmpSpeedRunMode(spawnpoint)
     if(!isDefined(spawnpoint))
         return;
 
-    timer_upd = 0;
+    timer_upd = getTime();
     while(isDefined(level.speedrunmode) && isAlive(self) && self.sessionstate == "playing") {
+        gettime = getTime();
         if(!isDefined(self.speedrunmode) && distance(self.origin, spawnpoint.origin) > 100) {
-            self.speedrunmode = getTime();
+            self.speedrunmode = gettime;
             self thread jmpSpeedRunModeClientHuds("create");
             prevpos = self.origin;
-            timer_pos = getTime();
+            timer_pos = gettime;
         }
 
-        waitval = 0.05;
+        waitval = level.frametime;
         wait waitval;
 
         if(!isDefined(self.speedrunmode))
             continue;
 
-        timer_upd += (int)(waitval * 1000);
-        if(timer_upd % 1000 == 0) {
+        if(gettime - timer_upd >= 1000) {
             self thread jmpSpeedRunModeClientHuds("update");
-            timer_upd = 0;
+            timer_upd = gettime;
         }
 
-        gettime = getTime();
         if(gettime - timer_pos >= level.speedruntimelimit) {
             self jmpSpeedRunModeReset();
             self suicide();
